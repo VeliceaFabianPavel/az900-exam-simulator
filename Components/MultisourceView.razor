@@ -1,0 +1,47 @@
+@using MockExam.Fluent.Models
+
+<Stem Item="Item" />
+
+<table class="answer-table">
+    <thead>
+        <tr>
+            <th>Statement</th>
+            <th class="narrow">@Item.YesLabel</th>
+            <th class="narrow">@Item.NoLabel</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var st in Item.Statements)
+        {
+            var s = st;
+            var value = Response.Map.GetValueOrDefault(s.Key);
+            <tr>
+                <td>@s.Text</td>
+                <td class="narrow">
+                    <input type="radio" name="@s.Key" checked="@(value == Yes)"
+                           aria-label="@Item.YesLabel" @onchange="() => Set(s.Key, Yes)" />
+                </td>
+                <td class="narrow">
+                    <input type="radio" name="@s.Key" checked="@(value == No)"
+                           aria-label="@Item.NoLabel" @onchange="() => Set(s.Key, No)" />
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private const string Yes = MultisourceItem.YesToken;
+    private const string No = MultisourceItem.NoToken;
+
+    [Parameter, EditorRequired] public MultisourceItem Item { get; set; } = default!;
+    [Parameter, EditorRequired] public Response Response { get; set; } = default!;
+    [Parameter] public EventCallback<Response> ResponseChanged { get; set; }
+
+    private async Task Set(string key, string value)
+    {
+        var next = Response.Clone();
+        next.Map[key] = value;
+        await ResponseChanged.InvokeAsync(next);
+    }
+}

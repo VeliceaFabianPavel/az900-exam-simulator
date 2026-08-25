@@ -1,0 +1,77 @@
+@using MockExam.Fluent.Models
+@* Exam Summary / Ready to start (pre-exam screens 2 and 3). *@
+
+<div class="pre-card @(Ready ? "ready" : "summary")">
+    <div class="pre-body">
+        <h1 class="pre-ttl">@(Ready ? "Ready to start the exam?" : "Exam Summary")</h1>
+        <h2 class="pre-sub">Exam AZ-900: Microsoft Azure Fundamentals &mdash; @Session.Form.Title</h2>
+
+        @if (Ready)
+        {
+            <div class="pre-thumb" aria-hidden="true">
+                <span class="pre-thumb-lines"></span>
+                <span class="pre-thumb-keys"></span>
+            </div>
+        }
+        else
+        {
+            <h3 class="pre-welcome">Welcome!</h3>
+        }
+
+        <ul class="pre-facts">
+            @if (!Ready)
+            {
+                <li>
+                    <AppIcon Name="clock" Size="22" />
+                    <span>
+                        Session Time: <b>65 minutes</b><br />
+                        <span class="pre-note">(Includes instructions, agreement, and exam)</span>
+                    </span>
+                </li>
+            }
+            <li>
+                <AppIcon Name="timer" Size="22" />
+                <span>Exam Time: <b>@ExamSession.DurationMinutes minutes</b></span>
+            </li>
+            <li>
+                <AppIcon Name="list" Size="22" />
+                <span>Total Exam Questions: <b>@Session.TotalQuestions</b></span>
+            </li>
+            @foreach (var d in ExamDomainInfo.All)
+            {
+                <li>
+                    <AppIcon Name="doc" Size="22" />
+                    <span>@d.Name(): <b>@Count(d) questions</b> (@d.Weighting())</span>
+                </li>
+            }
+            @if (!Ready)
+            {
+                <li>
+                    <AppIcon Name="award" Size="22" />
+                    <span>Minimum Score Required To Pass: <b>@ExamSession.PassMark</b> of 1000</span>
+                </li>
+            }
+        </ul>
+
+        @if (Ready)
+        {
+            <h3 class="pre-note-ttl">Note:</h3>
+            <p>You can move backward and forward through the questions, flag any question
+               for review, and change your answers at any time before the exam ends.</p>
+            <p>After the exam ends you will receive a score report and a full answer
+               review with an explanation for every question.</p>
+        }
+    </div>
+
+    @if (!Ready)
+    {
+        <div class="pre-hero" aria-hidden="true"></div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ExamSession Session { get; set; } = default!;
+    [Parameter] public bool Ready { get; set; }
+
+    private int Count(ExamDomain d) => Session.ScoredPages.Count(p => p.Item.Domain == d);
+}

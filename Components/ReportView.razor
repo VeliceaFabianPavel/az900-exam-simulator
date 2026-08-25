@@ -1,0 +1,118 @@
+@using MockExam.Fluent.Models
+@* Post-exam answer review: every question with the key, the response, and why. *@
+
+<h1 style="margin-top:0">Answer review</h1>
+
+<p>
+    Every question from this attempt is listed below with your answer, the correct
+    answer, and an explanation. Use the filter to focus on what you missed.
+</p>
+
+<div class="review-toolbar">
+    <FluentSelect TOption="string" Label="Show" Items="@Filters"
+                  @bind-SelectedOption="_filter" Width="220px" />
+
+    <FluentBadge Appearance="Appearance.Neutral">
+        @Session.CorrectCount of @Session.TotalQuestions correct
+    </FluentBadge>
+
+    @if (Incorrect > 0)
+    {
+        <FluentBadge Appearance="Appearance.Accent">@Incorrect to revise</FluentBadge>
+    }
+</div>
+
+@if (Rows.Count == 0)
+{
+    <FluentMessageBar Intent="MessageIntent.Success" AllowDismiss="false">
+        No questions match the current filter.
+    </FluentMessageBar>
+}
+else
+{
+    <div class="report-list">
+        @foreach (var row in Rows)
+        {
+            var r = row;
+            <article class="report-item @(r.Correct ? "correct" : "incorrect")">
+                <header class="report-head">
+                    <span class="report-no">Question @r.Number</span>
+                    <FluentBadge Appearance="@(r.Correct ? Appearance.Neutral : Appearance.Accent)">
+                        @(r.Correct ? "Correct" : r.Answered ? "Incorrect" : "Not answered")
+                    </FluentBadge>
+                    @if (r.Marked)
+                    {
+                        <span class="report-flag"><AppIcon Name="flag" Size="16" /> Flagged</span>
+                    }
+                    <span class="report-domain">@r.Item.Domain.ShortName()</span>
+                </header>
+
+                <div class="report-stem">
+                    @((MarkupString)r.Item.Stem)
+                </div>
+
+                <div class="report-answers">
+                    <div class="answer-block given">
+                        <h4>Your answer</h4>
+                        @if (r.Given.Count == 0)
+                        {
+                            <p class="muted">No answer recorded.</p>
+                        }
+                        else
+                        {
+                            <ul>@foreach (var line in r.Given) { <li>@line</li> }</ul>
+                        }
+                    </div>
+
+                    <div class="answer-block keyed">
+                        <h4>Correct answer</h4>
+                        <ul>@foreach (var line in r.Expected) { <li>@line</li> }</ul>
+                    </div>
+                </div>
+
+                <div class="report-why">
+                    <h4>Explanation</h4>
+                    @((MarkupString)r.Item.Explanation)
+                    <p class="report-ref">
+                        @r.Item.Objective
+                        @if (!string.IsNullOrWhiteSpace(r.Item.Reference))
+                        {
+                            <span> &middot; @r.Item.Reference</span>
+                        }
+                    </p>
+                </div>
+            </article>
+        }
+    </div>
+}
+
+<div class="score-actions">
+    <FluentButton Appearance="Appearance.Neutral" OnClick="OnBack">Back to score report</FluentButton>
+    <FluentButton Appearance="Appearance.Accent" OnClick="OnRestart">Choose another exam</FluentButton>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ExamSession Session { get; set; } = default!;
+    [Parameter] public EventCallback OnRestart { get; set; }
+    [Parameter] public EventCallback OnBack { get; set; }
+
+    private static readonly string[] Filters =
+        ["All questions", "Incorrect only", "Correct only", "Flagged", "Unanswered"];
+
+    private string _filter = "All questions";
+
+    private IReadOnlyList<ItemResult> All => Session.Results();
+
+    private int Incorrect => All.Count(r => !r.Correct);
+
+    private List<ItemResult> Rows => [.. All.Where(Matches)];
+
+    private bool Matches(ItemResult r) => _filter switch
+    {
+        "Incorrect only" => !r.Correct,
+        "Correct only" => r.Correct,
+        "Flagged" => r.Marked,
+        "Unanswered" => !r.Answered,
+        _ => true
+    };
+}

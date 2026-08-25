@@ -1,0 +1,363 @@
+@page "/"
+@using MockExam.Fluent.Models
+@implements IDisposable
+@inject ExamSession Session
+
+<PageTitle>Practice Exam</PageTitle>
+
+@if (Session.Screen is ExamScreen.Pick or ExamScreen.Agreement or ExamScreen.Summary or ExamScreen.Ready)
+{
+    @* ------------------------------------------------ pre-exam screens *@
+    <div class="pre-shell">
+        <header class="pre-header">
+            <span class="brand-logo">
+                <img src="images/logo.jpg" alt="Infinity Atom" />
+            </span>
+
+            @if (Session.Screen != ExamScreen.Pick)
+            {
+                <div class="pre-time">
+                    <div class="hdr-block-top">
+                        <span class="hdr-legend">Time remaining</span>
+                        <FluentSwitch @bind-Value="_showTime" aria-label="Show time remaining" />
+                    </div>
+                    @if (_showTime)
+                    {
+                        <span class="exam-clock">@Clock</span>
+                    }
+                </div>
+            }
+        </header>
+
+        <main class="pre-main">
+            @if (Session.Screen == ExamScreen.Pick)
+            {
+                <ExamPicker OnSelect="Session.SelectForm" />
+            }
+            else if (Session.Screen == ExamScreen.Agreement)
+            {
+                <AgreementView OnAccept="Session.Next" OnDecline="() => _declined = true" />
+            }
+            else
+            {
+                <SummaryView Session="Session" Ready="@(Session.Screen == ExamScreen.Ready)" />
+            }
+        </main>
+
+        <footer class="pre-footer">
+            @if (Session.Screen is ExamScreen.Summary or ExamScreen.Ready)
+            {
+                <button type="button" class="pre-btn wide" @onclick="Session.Next">
+                    <span>@(Session.Screen == ExamScreen.Ready ? "Start Exam" : "Next")</span>
+                    <AppIcon Name="chevron-right" Size="16" />
+                </button>
+            }
+
+            <button type="button" class="scheme-btn" @onclick="() => _schemeOpen = !_schemeOpen">
+                <AppIcon Name="sun" Size="16" />
+                <span>Color Scheme</span>
+                <AppIcon Name="@(_schemeOpen ? "chevron-up" : "chevron-down")" Size="16" />
+            </button>
+
+            @if (_schemeOpen)
+            {
+                <div class="scheme-flyout">
+                    @foreach (var m in Modes)
+                    {
+                        var mode = m;
+                        <button type="button" class="rail-choice @(Layout?.Mode == mode.Value ? "selected" : "")"
+                                @onclick="() => SetMode(mode.Value)">
+                            @mode.Label
+                        </button>
+                    }
+                </div>
+            }
+        </footer>
+    </div>
+}
+else
+{
+    @* ---------------------------------------------------- exam delivery *@
+    <div class="exam-shell">
+
+        <ExamToolbar Session="Session"
+                     @bind-Expanded="_railExpanded"
+                     Active="@_overlay"
+                     OnCommand="OnCommand"
+                     Mode="@(Layout?.Mode ?? DesignThemeModes.System)"
+                     ModeChanged="SetMode" />
+
+        <header class="exam-header">
+            <div class="hdr-title">
+                <span class="q-no">@HeaderTitle</span>
+                <span class="q-sub">@HeaderSubtitle</span>
+            </div>
+
+            <div class="hdr-block">
+                <div class="hdr-block-top">
+                    <span class="hdr-legend">Progress</span>
+                    <FluentSwitch @bind-Value="_showProgress" aria-label="Show progress" />
+                </div>
+                @if (_showProgress)
+                {
+                    <div class="progress-groups">
+                        @foreach (var g in Session.Progress())
+                        {
+                            <div class="progress-group @(g.Stub ? "stub" : "") @(g.Label == CurrentSection ? "current" : "")">
+                                <span class="progress-lbl">@GroupLabel(g)</span>
+                                <div class="progress-track">
+                                    <span style="width:@Percent(g)%"></span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="hdr-block right">
+                <div class="hdr-block-top">
+                    <span class="hdr-legend">Time remaining</span>
+                    <FluentSwitch @bind-Value="_showTime" aria-label="Show time remaining" />
+                </div>
+                @if (_showTime)
+                {
+                    <span class="exam-clock @(Session.Remaining < TimeSpan.FromMinutes(5) ? "low" : "")">@Clock</span>
+                }
+            </div>
+        </header>
+
+        <main class="exam-main">
+            <div class="exam-card">
+                @if (Session.Screen == ExamScreen.Review)
+                {
+                    <ReviewView Session="Session" />
+                }
+                else if (Session.Screen == ExamScreen.Score)
+                {
+                    <ScoreView Session="Session" OnRestart="Session.Restart" OnReview="Session.ShowReport" />
+                }
+                else if (Session.Screen == ExamScreen.Report)
+                {
+                    <ReportView Session="Session" OnRestart="Session.Restart" OnBack="Session.ShowScore" />
+                }
+                else
+                {
+                    <ItemBody Item="Session.Current.Item"
+                              Response="Session.CurrentState.Response"
+                              ResponseChanged="SaveResponse" />
+                }
+            </div>
+        </main>
+
+        <footer class="exam-footer">
+            <FluentButton Appearance="Appearance.Neutral"
+                          Disabled="@(!Session.CanGoPrevious)"
+                          OnClick="Session.Previous">
+                <AppIcon Name="chevron-left" Size="16" />
+                <span style="margin-left:6px">Previous</span>
+            </FluentButton>
+
+            <FluentButton Appearance="Appearance.Accent"
+                          Disabled="@(Session.Screen is ExamScreen.Score or ExamScreen.Report)"
+                          OnClick="OnNext">
+                <span style="margin-right:6px">@NextLabel</span>
+                <AppIcon Name="chevron-right" Size="16" />
+            </FluentButton>
+
+            <span class="spacer"></span>
+
+            @if (Session.Screen == ExamScreen.Item && Session.Current.Item.Scored)
+            {
+                <FluentButton Appearance="Appearance.Stealth"
+                              Disabled="@Session.CurrentState.Response.IsEmpty"
+                              OnClick="ResetAnswer">
+                    <AppIcon Name="reset" Size="16" />
+                    <span style="margin-left:6px">Reset answer</span>
+                </FluentButton>
+
+                <FluentCheckbox Value="@Session.CurrentState.Marked"
+                                ValueChanged="ToggleMark" Label="Review later" />
+
+                <FluentCheckbox Value="@Session.CurrentState.Feedback"
+                                ValueChanged="ToggleFeedback" Label="Leave feedback" />
+            }
+        </footer>
+    </div>
+}
+
+@* ------------------------------------------------------------ overlays *@
+
+<FluentDialog Hidden="@(_overlay != "calculator")" Modal="false" TrapFocus="false">
+    <FluentDialogHeader>Calculator</FluentDialogHeader>
+    <FluentDialogBody><CalculatorPanel /></FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="CloseOverlay">Close</FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<FluentDialog Hidden="@(_overlay != "break")" Modal="true">
+    <FluentDialogHeader>Take a break</FluentDialogHeader>
+    <FluentDialogBody>
+        <p>The exam clock keeps running during an unscheduled break.</p>
+        <p>You have <strong>@Clock</strong> remaining.</p>
+    </FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="CloseOverlay">Resume exam</FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<FluentDialog Hidden="@(_overlay != "help")" Modal="true">
+    <FluentDialogHeader>Help</FluentDialogHeader>
+    <FluentDialogBody>
+        <p>Use <strong>Next</strong> and <strong>Previous</strong> to move through the form.</p>
+        <p>Select <strong>Review later</strong> to flag a question, then open
+           <strong>Exam Progress</strong> in the toolbar to track your position.</p>
+        <p>You can change any answer at any time before you end the exam.</p>
+    </FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="CloseOverlay">Close</FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<FluentDialog Hidden="@(!_confirmEnd)" Modal="true">
+    <FluentDialogHeader>End the exam?</FluentDialogHeader>
+    <FluentDialogBody>
+        <p>You have answered @Session.AnsweredCount of @Session.TotalQuestions questions.</p>
+        <p>You cannot return to the exam after it ends.</p>
+    </FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="() => _confirmEnd = false">Cancel</FluentButton>
+        <FluentButton Appearance="Appearance.Accent" OnClick="ConfirmEnd">End exam</FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<FluentDialog Hidden="@(!_declined)" Modal="true">
+    <FluentDialogHeader>Agreement required</FluentDialogHeader>
+    <FluentDialogBody>
+        <p>You must accept the Candidate Agreement before the exam can begin.</p>
+    </FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="() => _declined = false">Back</FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+@code {
+    private bool _railExpanded = true;
+    private bool _confirmEnd;
+    private bool _declined;
+    private bool _schemeOpen;
+    private bool _showProgress = true;
+    private bool _showTime = true;
+    private string? _overlay;
+    private Timer? _timer;
+
+    [CascadingParameter] private MainLayout? Layout { get; set; }
+
+    private static readonly (string Label, DesignThemeModes Value)[] Modes =
+    [
+        ("System", DesignThemeModes.System),
+        ("Light", DesignThemeModes.Light),
+        ("Dark", DesignThemeModes.Dark)
+    ];
+
+    protected override void OnInitialized()
+    {
+        Session.Changed += OnSessionChanged;
+        _timer = new Timer(_ => InvokeAsync(() =>
+        {
+            if (Session.Started && !Session.Ended)
+            {
+                Session.Tick();
+            }
+            StateHasChanged();
+        }), null, 1000, 1000);
+    }
+
+    private void OnSessionChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Session.Changed -= OnSessionChanged;
+        _timer?.Dispose();
+    }
+
+    private void OnCommand(string command) => _overlay = _overlay == command ? null : command;
+
+    private void CloseOverlay() => _overlay = null;
+
+    private void SetMode(DesignThemeModes mode)
+    {
+        if (Layout is null)
+        {
+            return;
+        }
+
+        Layout.Mode = mode;
+        Layout.Refresh();
+        _schemeOpen = false;
+    }
+
+    private Task SaveResponse(Response response)
+    {
+        Session.SetResponse(Session.Current.Key, response);
+        return Task.CompletedTask;
+    }
+
+    private void ResetAnswer() => Session.ResetResponse(Session.Current.Key);
+
+    private void ToggleMark(bool _) => Session.ToggleMark(Session.Current.Key);
+
+    private void ToggleFeedback(bool _) => Session.ToggleFeedback(Session.Current.Key);
+
+    private static string GroupLabel(ProgressGroup g) =>
+        g.Stub ? g.Label : $"{g.Label} ({g.Answered}/{g.Total})";
+
+    private static int Percent(ProgressGroup g) => g.Total == 0 ? 0 : 100 * g.Answered / g.Total;
+
+    private string CurrentSection => Session.Screen == ExamScreen.Item ? Session.Current.Section : "";
+
+    private string HeaderTitle => Session.Screen switch
+    {
+        ExamScreen.Review => "Review",
+        ExamScreen.Score => "Score report",
+        ExamScreen.Report => "Answer review",
+        _ => Session.Current.Seq is int s ? $"Question {s}" : "Introduction"
+    };
+
+    private string HeaderSubtitle => Session.Screen switch
+    {
+        ExamScreen.Review => $"{Session.AnsweredCount} of {Session.TotalQuestions} answered",
+        ExamScreen.Score => Session.Form.Title,
+        ExamScreen.Report => $"{Session.CorrectCount} of {Session.TotalQuestions} correct",
+        _ => $"{Session.Form.Title} \u00b7 {Session.Current.Item.Domain.ShortName()}"
+    };
+
+    private string NextLabel => Session.Screen == ExamScreen.Review
+        ? "End exam"
+        : Session.Index >= Session.Pages.Count - 1 ? "Review" : "Next";
+
+    private string Clock
+    {
+        get
+        {
+            var r = Session.Remaining;
+            return $"{(int)r.TotalMinutes:00} : {r.Seconds:00}";
+        }
+    }
+
+    private void OnNext()
+    {
+        if (Session.Screen == ExamScreen.Review)
+        {
+            _confirmEnd = true;
+            return;
+        }
+        Session.Next();
+    }
+
+    private void ConfirmEnd()
+    {
+        _confirmEnd = false;
+        Session.EndExam();
+    }
+}

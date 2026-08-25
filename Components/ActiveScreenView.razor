@@ -1,0 +1,90 @@
+@using MockExam.Fluent.Models
+
+<Stem Item="Item" />
+
+@if (Item.Fields.Count > 0)
+{
+    <p class="instruction">Work area &mdash; make a selection in each list.</p>
+
+    <div class="screen-sim">
+        <div class="screen-chrome">
+            <span class="screen-dot"></span>
+            <span class="screen-name">@Item.ScreenTitle</span>
+        </div>
+        <div class="screen-body">
+            @foreach (var f in Item.Fields)
+            {
+                var field = f;
+                <div class="screen-field"
+                     style="left:@(field.X)%;top:@(field.Y)%;width:@(field.W)%">
+                    <label for="@field.Key">@field.Label</label>
+                    <select id="@field.Key" class="screen-select"
+                            value="@Response.Map.GetValueOrDefault(field.Key)"
+                            @onchange="e => Set(field.Key, e.Value?.ToString())">
+                        <option value="">Select an option</option>
+                        @foreach (var opt in field.Options)
+                        {
+                            <option value="@opt">@opt</option>
+                        }
+                    </select>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@if (Item.Rows.Count > 0)
+{
+    <p class="instruction" style="margin-top:20px">Answer area</p>
+
+    <table class="answer-table">
+        <thead>
+            <tr>
+                <th>Statement</th>
+                <th style="width:340px">Answer</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Item.Rows)
+            {
+                var r = row;
+                <tr>
+                    <td>@r.Label</td>
+                    <td>
+                        <select class="answer-select"
+                                value="@Response.Map.GetValueOrDefault(r.Key)"
+                                @onchange="e => Set(r.Key, e.Value?.ToString())">
+                            <option value="">Select an option</option>
+                            @foreach (var opt in r.Options)
+                            {
+                                <option value="@opt">@opt</option>
+                            }
+                        </select>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter, EditorRequired] public ActiveScreenItem Item { get; set; } = default!;
+    [Parameter, EditorRequired] public Response Response { get; set; } = default!;
+    [Parameter] public EventCallback<Response> ResponseChanged { get; set; }
+
+    private async Task Set(string key, string? value)
+    {
+        var next = Response.Clone();
+
+        if (string.IsNullOrEmpty(value))
+        {
+            next.Map.Remove(key);
+        }
+        else
+        {
+            next.Map[key] = value;
+        }
+
+        await ResponseChanged.InvokeAsync(next);
+    }
+}

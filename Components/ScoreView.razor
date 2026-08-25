@@ -1,0 +1,100 @@
+@using MockExam.Fluent.Models
+@* Score report shown as soon as the exam ends. *@
+
+<h1 style="margin-top:0">Score report</h1>
+
+<p class="score-form">@Session.Form.Title &middot; Exam AZ-900: Microsoft Azure Fundamentals</p>
+
+<div class="score-banner @(Session.Passed ? "pass" : "fail")">
+    <div class="score-figure">
+        <span class="score-value">@Session.ScaledScore</span>
+        <span class="score-scale">of 1000</span>
+    </div>
+    <div class="score-verdict">
+        <span class="verdict">@(Session.Passed ? "Pass" : "Did not pass")</span>
+        <span class="verdict-note">
+            A scaled score of @ExamSession.PassMark or higher is required to pass.
+        </span>
+    </div>
+</div>
+
+<div class="score-grid">
+    <div class="score-tile">
+        <div class="val">@Session.CorrectCount / @Session.TotalQuestions</div>
+        <div class="lbl">Correct answers</div>
+    </div>
+    <div class="score-tile">
+        <div class="val">@Percent%</div>
+        <div class="lbl">Percent correct</div>
+    </div>
+    <div class="score-tile">
+        <div class="val">@Unanswered</div>
+        <div class="lbl">Left unanswered</div>
+    </div>
+    <div class="score-tile">
+        <div class="val">@Elapsed</div>
+        <div class="lbl">Time used</div>
+    </div>
+</div>
+
+<h2>Performance by skills area</h2>
+
+<p>
+    The bars below show how you performed in each area of the skills outline.
+    Use them to decide where to concentrate your revision.
+</p>
+
+<div class="domain-list">
+    @foreach (var d in Session.DomainResults())
+    {
+        <div class="domain-row">
+            <div class="domain-head">
+                <span class="domain-name">@d.Domain.Name()</span>
+                <span class="domain-score">@d.Correct / @d.Total</span>
+            </div>
+            <div class="domain-track">
+                <span class="@Band(d.Percent)" style="width:@((int)Math.Round(d.Percent))%"></span>
+            </div>
+            <span class="domain-meta">
+                @((int)Math.Round(d.Percent))% correct &middot; exam weighting @d.Domain.Weighting()
+            </span>
+        </div>
+    }
+</div>
+
+<FluentMessageBar Intent="MessageIntent.Info" AllowDismiss="false">
+    This practice score is an approximation. The live exam uses a statistical
+    scaling model that Microsoft does not publish, so treat this figure as a
+    readiness indicator rather than a prediction.
+</FluentMessageBar>
+
+<div class="score-actions">
+    <FluentButton Appearance="Appearance.Accent" OnClick="OnReview">
+        Review answers and explanations
+    </FluentButton>
+    <FluentButton Appearance="Appearance.Neutral" OnClick="OnRestart">
+        Choose another exam
+    </FluentButton>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ExamSession Session { get; set; } = default!;
+    [Parameter] public EventCallback OnRestart { get; set; }
+    [Parameter] public EventCallback OnReview { get; set; }
+
+    private int Percent => (int)Math.Round(Session.PercentCorrect);
+
+    private int Unanswered => Session.TotalQuestions - Session.AnsweredCount;
+
+    private static string Band(double percent) =>
+        percent >= 70 ? "good" : percent >= 50 ? "fair" : "poor";
+
+    private string Elapsed
+    {
+        get
+        {
+            var used = Session.Elapsed;
+            return $"{(int)used.TotalMinutes:00}:{used.Seconds:00}";
+        }
+    }
+}

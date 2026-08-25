@@ -1,0 +1,79 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Allow the workflow to publish to Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deploy finish rather than cancelling it mid-flight.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish
+        run: dotnet publish MockExam.Fluent.csproj -c Release -o release --nologo
+
+      # Pages compresses responses itself and never serves these pre-compressed
+      # copies, so they are ~7 MB of dead weight that would also go stale when
+      # the base href below is rewritten.
+      - name: Drop pre-compressed duplicates
+        run: find release/wwwroot -type f \( -name '*.gz' -o -name '*.br' \) -delete
+
+      # A project page is served from https://<user>.github.io/<repo>/, so the
+      # base href has to point at the sub-path or every asset 404s. A user page
+      # (repo named <user>.github.io) is served from the domain root instead.
+      - name: Rewrite base href
+        run: |
+          repo='${{ github.event.repository.name }}'
+          owner='${{ github.repository_owner }}'
+          if [ "$(echo "$repo" | tr '[:upper:]' '[:lower:]')" = "$(echo "$owner" | tr '[:upper:]' '[:lower:]').github.io" ]; then
+            prefix='/'
+          else
+            prefix="/$repo/"
+          fi
+          echo "Base href: $prefix"
+          sed -i "s|<base href=\"/\" />|<base href=\"$prefix\" />|g" release/wwwroot/index.html
+          grep -F "<base href=\"$prefix\" />" release/wwwroot/index.html
+
+      # GitHub Pages runs Jekyll by default, which silently drops any folder
+      # starting with an underscore - including Blazor's _framework.
+      - name: Disable Jekyll
+        run: touch release/wwwroot/.nojekyll
+
+      # Pages has no server-side rewrite, so serve the app shell for unknown
+      # paths. This keeps deep links and browser refreshes working.
+      - name: Add SPA fallback
+        run: cp release/wwwroot/index.html release/wwwroot/404.html
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: release/wwwroot
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,16 @@
+<button type="button" class="rail-item @(Selected ? "selected" : "")"
+        title="@Label" aria-label="@Label" @onclick="OnClick">
+    <AppIcon Name="@Icon" />
+    @if (Expanded)
+    {
+        <span class="rail-label">@Label</span>
+    }
+</button>
+
+@code {
+    [Parameter, EditorRequired] public string Icon { get; set; } = "";
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter] public bool Expanded { get; set; }
+    [Parameter] public bool Selected { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+}

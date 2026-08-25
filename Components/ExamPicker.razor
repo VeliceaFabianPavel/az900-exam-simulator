@@ -1,0 +1,49 @@
+@using MockExam.Fluent.Models
+@* Pre-exam screen 0: choose one of the ten practice forms. *@
+
+<div class="pre-card pick">
+    <div class="pre-body">
+        <h1 class="pre-ttl">Choose a practice exam</h1>
+        <h2 class="pre-sub">Exam AZ-900: Microsoft Azure Fundamentals</h2>
+
+        <p>
+            Each form draws @ExamCatalog.QuestionCount questions from a bank of
+            @QuestionBank.All.Count items, stratified to match the published skills
+            outline. Questions and answer options are reshuffled on every attempt.
+        </p>
+
+        <ul class="pre-facts compact">
+            <li>
+                <AppIcon Name="timer" Size="22" />
+                <span>Exam Time: <b>@ExamSession.DurationMinutes minutes</b></span>
+            </li>
+            <li>
+                <AppIcon Name="award" Size="22" />
+                <span>Pass mark: <b>@ExamSession.PassMark</b> of 1000</span>
+            </li>
+            @foreach (var d in ExamDomainInfo.All)
+            {
+                <li>
+                    <AppIcon Name="doc" Size="22" />
+                    <span>@d.Name(): <b>@d.ItemsPerForm() questions</b> (@d.Weighting())</span>
+                </li>
+            }
+        </ul>
+
+        <div class="form-grid">
+            @foreach (var f in ExamCatalog.Forms)
+            {
+                var form = f;
+                <button type="button" class="form-tile" @onclick="() => OnSelect.InvokeAsync(form)">
+                    <span class="form-no">@form.Number</span>
+                    <span class="form-name">@form.Title</span>
+                    <span class="form-meta">@ExamCatalog.QuestionCount questions &middot; @ExamSession.DurationMinutes min</span>
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback<ExamForm> OnSelect { get; set; }
+}

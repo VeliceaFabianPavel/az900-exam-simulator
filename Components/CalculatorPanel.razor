@@ -1,0 +1,100 @@
+@using System.Globalization
+
+<div style="display:flex;flex-direction:column;gap:8px;width:280px">
+    <FluentTextField Value="@_display" ReadOnly="true" Style="width:100%;text-align:right" />
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+        @foreach (var key in Keys)
+        {
+            var k = key;
+            <FluentButton Appearance="@(Operators.Contains(k) ? Appearance.Accent : Appearance.Neutral)"
+                          Style="width:100%"
+                          OnClick="() => Press(k)">
+                @k
+            </FluentButton>
+        }
+    </div>
+</div>
+
+@code {
+    private static readonly string[] Keys =
+    [
+        "C", "±", "%", "÷",
+        "7", "8", "9", "×",
+        "4", "5", "6", "−",
+        "1", "2", "3", "+",
+        "0", ".", "⌫", "="
+    ];
+
+    private static readonly HashSet<string> Operators = ["÷", "×", "−", "+", "="];
+
+    private string _display = "0";
+    private double _accumulator;
+    private string? _pending;
+    private bool _fresh = true;
+
+    private void Press(string key)
+    {
+        switch (key)
+        {
+            case "C":
+                _display = "0";
+                _accumulator = 0;
+                _pending = null;
+                _fresh = true;
+                return;
+
+            case "⌫":
+                _display = _display.Length > 1 ? _display[..^1] : "0";
+                return;
+
+            case "±":
+                _display = _display.StartsWith('-') ? _display[1..] : "-" + _display;
+                return;
+
+            case "%":
+                _display = Format(Current / 100);
+                return;
+
+            case ".":
+                if (!_display.Contains('.'))
+                {
+                    _display = _fresh ? "0." : _display + ".";
+                    _fresh = false;
+                }
+                return;
+        }
+
+        if (Operators.Contains(key))
+        {
+            Apply();
+            _pending = key == "=" ? null : key;
+            _fresh = true;
+            return;
+        }
+
+        _display = _fresh || _display == "0" ? key : _display + key;
+        _fresh = false;
+    }
+
+    private double Current =>
+        double.TryParse(_display, NumberStyles.Any, CultureInfo.InvariantCulture, out var v) ? v : 0;
+
+    private void Apply()
+    {
+        var value = Current;
+
+        _accumulator = _pending switch
+        {
+            "+" => _accumulator + value,
+            "−" => _accumulator - value,
+            "×" => _accumulator * value,
+            "÷" => value == 0 ? double.NaN : _accumulator / value,
+            _ => value
+        };
+
+        _display = double.IsNaN(_accumulator) ? "Cannot divide by zero" : Format(_accumulator);
+    }
+
+    private static string Format(double v) => v.ToString("0.##########", CultureInfo.InvariantCulture);
+}

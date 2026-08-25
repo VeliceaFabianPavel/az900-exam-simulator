@@ -1,0 +1,93 @@
+@using MockExam.Fluent.Models
+
+<Stem Item="Item" />
+
+<p class="instruction">
+    Select a value, then select a drop target. Values can also be dragged. Each
+    value may be used once, more than once, or not at all.
+</p>
+
+<div class="transfer">
+    <div class="transfer-col">
+        <div class="transfer-hd">@Item.SourceLabel</div>
+        <div class="transfer-box">
+            @foreach (var v in Item.Source)
+            {
+                var value = v;
+                <div class="chip @(_picked == value.Key ? "selected" : "")"
+                     draggable="true"
+                     @ondragstart="() => _dragged = value.Key"
+                     @onclick="() => TogglePick(value.Key)">
+                    <span class="chip-grip"><AppIcon Name="grip" Size="16" /></span>
+                    <span>@value.Text</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="transfer-mid"></div>
+
+    <div class="transfer-col">
+        <div class="transfer-hd">@Item.TargetLabel</div>
+        <div class="transfer-box">
+            @foreach (var t in Item.Targets)
+            {
+                var target = t;
+                var assigned = Response.Map.GetValueOrDefault(target.Key);
+                <div class="slot" style="flex-direction:column;align-items:stretch;gap:6px">
+                    <span>@target.Label</span>
+                    <div class="slot-drop @(assigned is not null ? "filled" : "")"
+                         @ondragover:preventDefault="true"
+                         @ondrop="() => Assign(target.Key, _dragged)"
+                         @onclick="() => Assign(target.Key, _picked)">
+                        @if (assigned is null)
+                        {
+                            <span>Drop area</span>
+                        }
+                        else
+                        {
+                            <div class="chip">
+                                <span>@Text(assigned)</span>
+                                <FluentButton Appearance="Appearance.Stealth" Title="Clear"
+                                              OnClick="() => Assign(target.Key, null)">
+                                    <AppIcon Name="dismiss" Size="16" />
+                                </FluentButton>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public DragDropItem Item { get; set; } = default!;
+    [Parameter, EditorRequired] public Response Response { get; set; } = default!;
+    [Parameter] public EventCallback<Response> ResponseChanged { get; set; }
+
+    private string? _picked;
+    private string? _dragged;
+
+    private string Text(string key) => Item.Source.FirstOrDefault(s => s.Key == key)?.Text ?? key;
+
+    private void TogglePick(string key) => _picked = _picked == key ? null : key;
+
+    private async Task Assign(string targetKey, string? valueKey)
+    {
+        var next = Response.Clone();
+
+        if (valueKey is null)
+        {
+            next.Map.Remove(targetKey);
+        }
+        else
+        {
+            next.Map[targetKey] = valueKey;
+        }
+
+        _dragged = null;
+        _picked = null;
+        await ResponseChanged.InvokeAsync(next);
+    }
+}

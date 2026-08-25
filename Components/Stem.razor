@@ -1,0 +1,19 @@
+@using MockExam.Fluent.Models
+
+<div class="stem">@((MarkupString)Item.Stem)</div>
+
+@if (Item.Exhibits.Count > 0)
+{
+    <FluentTabs>
+        @foreach (var ex in Item.Exhibits)
+        {
+            <FluentTab Label="@ex.Title" Id="@ex.Title">
+                @((MarkupString)ex.Html)
+            </FluentTab>
+        }
+    </FluentTabs>
+}
+
+@code {
+    [Parameter, EditorRequired] public Item Item { get; set; } = default!;
+}

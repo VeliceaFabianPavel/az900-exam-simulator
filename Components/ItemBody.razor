@@ -1,0 +1,38 @@
+@using MockExam.Fluent.Models
+
+@switch (Item)
+{
+    case DisplayItem d:
+        <IntroView Item="d" />
+        break;
+
+    case MultipleChoiceItem mc:
+        <MultipleChoiceView Item="mc" Response="Response" ResponseChanged="ResponseChanged" />
+        break;
+
+    case BuildListItem bl:
+        <BuildListView Item="bl" Response="Response" ResponseChanged="ResponseChanged" />
+        break;
+
+    case DragDropItem dd:
+        <DragDropView Item="dd" Response="Response" ResponseChanged="ResponseChanged" />
+        break;
+
+    case ActiveScreenItem asc:
+        <ActiveScreenView Item="asc" Response="Response" ResponseChanged="ResponseChanged" />
+        break;
+
+    case HotAreaItem ha:
+        <HotAreaView Item="ha" Response="Response" ResponseChanged="ResponseChanged" />
+        break;
+
+    case MultisourceItem ms:
+        <MultisourceView Item="ms" Response="Response" ResponseChanged="ResponseChanged" />
+        break;
+}
+
+@code {
+    [Parameter, EditorRequired] public Item Item { get; set; } = default!;
+    [Parameter, EditorRequired] public Response Response { get; set; } = default!;
+    [Parameter] public EventCallback<Response> ResponseChanged { get; set; }
+}

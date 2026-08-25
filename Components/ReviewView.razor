@@ -1,0 +1,114 @@
+@using MockExam.Fluent.Models
+
+<h1 style="margin-top:0">Review your answers</h1>
+
+<p>
+    Select a question to return to it. Questions you flagged for review are
+    marked. When you are finished, select <strong>End exam</strong>.
+</p>
+
+<div class="review-toolbar">
+    <FluentSelect TOption="string" Label="Show" Items="@Filters"
+                  @bind-SelectedOption="_filter" Width="200px" />
+
+    <FluentBadge Appearance="Appearance.Neutral">
+        @Session.AnsweredCount of @Session.TotalQuestions answered
+    </FluentBadge>
+
+    @if (Unanswered > 0)
+    {
+        <FluentBadge Appearance="Appearance.Accent">@Unanswered unanswered</FluentBadge>
+    }
+</div>
+
+@if (Rows.Count == 0)
+{
+    <FluentMessageBar Intent="MessageIntent.Info" AllowDismiss="false">
+        No questions match the current filter.
+    </FluentMessageBar>
+}
+else
+{
+    <table class="answer-table">
+        <thead>
+            <tr>
+                <th style="width:110px">Question</th>
+                <th>Type</th>
+                <th style="width:140px">Status</th>
+                <th style="width:100px">Flagged</th>
+                <th style="width:160px"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Rows)
+            {
+                var r = row;
+                <tr>
+                    <td>@r.Number</td>
+                    <td>@r.Kind</td>
+                    <td>
+                        <FluentBadge Appearance="@(r.Complete ? Appearance.Neutral : Appearance.Accent)">
+                            @(r.Complete ? "Answered" : "Unanswered")
+                        </FluentBadge>
+                    </td>
+                    <td>
+                        @if (r.Marked)
+                        {
+                            <AppIcon Name="flag" Size="18" />
+                        }
+                    </td>
+                    <td>
+                        <FluentButton Appearance="Appearance.Lightweight"
+                                      OnClick="() => Session.GoTo(r.Index)">
+                            Go to question
+                        </FluentButton>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter, EditorRequired] public ExamSession Session { get; set; } = default!;
+
+    private static readonly string[] Filters = ["All questions", "Answered", "Unanswered", "Flagged"];
+
+    private string _filter = "All questions";
+
+    private sealed record ReviewRow(int Index, string Number, string Kind, bool Complete, bool Marked);
+
+    private int Unanswered => Session.TotalQuestions - Session.AnsweredCount;
+
+    private List<ReviewRow> Rows =>
+        Session.Pages
+            .Select((p, i) => (Page: p, Index: i))
+            .Where(x => x.Page.Seq is not null)
+            .Select(x => new ReviewRow(
+                x.Index,
+                x.Page.Seq!.Value.ToString(),
+                Describe(x.Page.Item.Type),
+                Session.IsComplete(x.Page),
+                Session.State(x.Page.Key).Marked))
+            .Where(Matches)
+            .ToList();
+
+    private bool Matches(ReviewRow r) => _filter switch
+    {
+        "Answered" => r.Complete,
+        "Unanswered" => !r.Complete,
+        "Flagged" => r.Marked,
+        _ => true
+    };
+
+    private static string Describe(ItemType type) => type switch
+    {
+        ItemType.MultipleChoice => "Multiple choice",
+        ItemType.BuildList => "Build list",
+        ItemType.DragDrop => "Drag and drop",
+        ItemType.ActiveScreen => "Active screen",
+        ItemType.HotArea => "Hot area",
+        ItemType.Multisource => "Yes / No",
+        _ => "Question"
+    };
+}

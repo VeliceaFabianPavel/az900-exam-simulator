@@ -1,0 +1,171 @@
+@using MockExam.Fluent.Models
+
+<Stem Item="Item" />
+
+<p class="instruction">
+    Select an action, then use the arrows to move it into the answer area and
+    order it. Items can also be dragged.
+</p>
+
+<div class="transfer">
+    <div class="transfer-col">
+        <div class="transfer-hd">@Item.SourceLabel</div>
+        <div class="transfer-box"
+             @ondragover:preventDefault="true"
+             @ondrop="() => Remove(_dragged)">
+            @foreach (var s in Item.Source)
+            {
+                var choice = s;
+                var used = Response.Ordered.Contains(choice.Key);
+                <div class="chip @(used ? "used" : "") @(_picked == choice.Key ? "selected" : "")"
+                     draggable="@((!used).ToString().ToLowerInvariant())"
+                     @ondragstart="() => _dragged = choice.Key"
+                     @onclick="() => Pick(choice.Key, used)">
+                    <span class="chip-grip"><AppIcon Name="grip" Size="16" /></span>
+                    <span>@choice.Text</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="transfer-mid">
+        <FluentButton Title="Add to answer area"
+                      Disabled="@(_picked is null || Response.Ordered.Count >= Item.AnswerSlots)"
+                      OnClick="AddPicked">
+            <AppIcon Name="chevron-right" />
+        </FluentButton>
+        <FluentButton Title="Remove from answer area"
+                      Disabled="@(_selectedSlot is null)"
+                      OnClick="RemoveSelected">
+            <AppIcon Name="chevron-left" />
+        </FluentButton>
+        <FluentButton Title="Move up"
+                      Disabled="@(_selectedSlot is null || _selectedSlot == 0)"
+                      OnClick="() => Move(-1)">
+            <AppIcon Name="arrow-up" />
+        </FluentButton>
+        <FluentButton Title="Move down"
+                      Disabled="@(_selectedSlot is null || _selectedSlot >= Response.Ordered.Count - 1)"
+                      OnClick="() => Move(1)">
+            <AppIcon Name="arrow-down" />
+        </FluentButton>
+    </div>
+
+    <div class="transfer-col">
+        <div class="transfer-hd">@Item.AnswerLabel</div>
+        <div class="transfer-box">
+            @for (var i = 0; i < Item.AnswerSlots; i++)
+            {
+                var index = i;
+                var key = index < Response.Ordered.Count ? Response.Ordered[index] : null;
+                <div class="slot">
+                    <span class="slot-no">@(index + 1)</span>
+                    <div class="slot-drop @(key is not null ? "filled" : "") @(_selectedSlot == index ? "active" : "")"
+                         @ondragover:preventDefault="true"
+                         @ondrop="() => DropAt(index)"
+                         @onclick="() => SelectSlot(index, key)">
+                        @if (key is null)
+                        {
+                            <span>Drop here</span>
+                        }
+                        else
+                        {
+                            <div class="chip @(_selectedSlot == index ? "selected" : "")">
+                                <span class="chip-grip"><AppIcon Name="grip" Size="16" /></span>
+                                <span>@Text(key)</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public BuildListItem Item { get; set; } = default!;
+    [Parameter, EditorRequired] public Response Response { get; set; } = default!;
+    [Parameter] public EventCallback<Response> ResponseChanged { get; set; }
+
+    private string? _picked;
+    private string? _dragged;
+    private int? _selectedSlot;
+
+    private string Text(string key) => Item.Source.FirstOrDefault(s => s.Key == key)?.Text ?? key;
+
+    private void SelectSlot(int index, string? key) => _selectedSlot = key is null ? null : index;
+
+    private void Pick(string key, bool used)
+    {
+        if (used)
+        {
+            return;
+        }
+        _picked = _picked == key ? null : key;
+        _selectedSlot = null;
+    }
+
+    private Task AddPicked() => Insert(_picked, Response.Ordered.Count);
+
+    private Task DropAt(int index) => Insert(_dragged ?? _picked, index);
+
+    private async Task Insert(string? key, int index)
+    {
+        if (key is null || Response.Ordered.Contains(key) || Response.Ordered.Count >= Item.AnswerSlots)
+        {
+            return;
+        }
+
+        var next = Response.Clone();
+        next.Ordered.Insert(Math.Min(index, next.Ordered.Count), key);
+        _picked = null;
+        _dragged = null;
+        await ResponseChanged.InvokeAsync(next);
+    }
+
+    private async Task Remove(string? key)
+    {
+        if (key is null || !Response.Ordered.Contains(key))
+        {
+            return;
+        }
+
+        var next = Response.Clone();
+        next.Ordered.Remove(key);
+        _dragged = null;
+        _selectedSlot = null;
+        await ResponseChanged.InvokeAsync(next);
+    }
+
+    private async Task RemoveSelected()
+    {
+        if (_selectedSlot is not int i || i >= Response.Ordered.Count)
+        {
+            return;
+        }
+
+        var next = Response.Clone();
+        next.Ordered.RemoveAt(i);
+        _selectedSlot = null;
+        await ResponseChanged.InvokeAsync(next);
+    }
+
+    private async Task Move(int delta)
+    {
+        if (_selectedSlot is not int i)
+        {
+            return;
+        }
+
+        var target = i + delta;
+        if (target < 0 || target >= Response.Ordered.Count)
+        {
+            return;
+        }
+
+        var next = Response.Clone();
+        (next.Ordered[i], next.Ordered[target]) = (next.Ordered[target], next.Ordered[i]);
+        _selectedSlot = target;
+        await ResponseChanged.InvokeAsync(next);
+    }
+}

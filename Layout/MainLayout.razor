@@ -1,0 +1,14 @@
+@inherits LayoutComponentBase
+
+<FluentDesignTheme Mode="@Mode" StorageName="mockexam-theme" />
+
+<CascadingValue Value="this" IsFixed="false">
+    @Body
+</CascadingValue>
+
+@code {
+    public DesignThemeModes Mode { get; set; } = DesignThemeModes.System;
+
+    /// <summary>Re-renders the layout after a child changes the colour scheme.</summary>
+    public void Refresh() => StateHasChanged();
+}

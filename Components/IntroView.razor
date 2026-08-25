@@ -1,0 +1,17 @@
+@using MockExam.Fluent.Models
+
+<h1 style="margin-top:0">@Item.Title</h1>
+
+<div class="stem">@((MarkupString)Item.Stem)</div>
+
+<dl class="fact-grid">
+    @foreach (var (label, value) in Item.Facts)
+    {
+        <dt>@label</dt>
+        <dd>@value</dd>
+    }
+</dl>
+
+@code {
+    [Parameter, EditorRequired] public DisplayItem Item { get; set; } = default!;
+}

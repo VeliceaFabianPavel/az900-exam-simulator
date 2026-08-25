@@ -1,0 +1,70 @@
+@* Infinity Atom Certification Exam Candidate Agreement (pre-exam screen 1). *@
+
+<div class="pre-card agreement">
+    <div class="pre-art">
+        <h1 class="pre-art-ttl">
+            <span>Infinity Atom</span>
+            <span>Certification Exam</span>
+            <span>Candidate Agreement</span>
+        </h1>
+        <p class="pre-art-sub">August, 2026</p>
+        <div class="pre-art-stack" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+        </div>
+    </div>
+
+    <div class="pre-body">
+        <p><strong>
+            When you registered for this exam, you agreed to adhere to the terms and
+            conditions of the Infinity Atom Certification Exam Candidate Agreement. The
+            following information provides a reminder of the rules specific to the
+            exam experience.
+        </strong></p>
+
+        <p>This exam is Infinity Atom confidential and proprietary information and is
+           protected by intellectual property laws.</p>
+
+        <p>You will not participate in any behavior that could compromise the
+           confidentiality or results of any Infinity Atom Certification exam. Proctors
+           are authorized to take immediate and appropriate measures against
+           individuals who violate testing rules. Examples of misconduct include but
+           are not limited to:</p>
+
+        <ul>
+            <li>Capturing or providing access in any form or by any means to any exam,
+                exam content, or exam-related information.</li>
+            <li>Misrepresenting your identity or impersonating another individual.</li>
+            <li>Misrepresenting your country of residence or the country in which an
+                online proctored exam will be delivered.</li>
+            <li>Modifying or altering the exam, exam score, or any exam record.</li>
+            <li>Submitting any work or answers that are not entirely your own.</li>
+            <li>Using Artificial Intelligence or related products or services in any
+                way to assist you.</li>
+            <li>Providing or receiving improper assistance during the exam.</li>
+            <li>Seeking or obtaining unauthorized access to any exam, exam content, or
+                exam-related information.</li>
+            <li>Possessing non-authorized items while taking an exam, including mobile
+                phones, electronic devices, laptops, watches, notes, documentation, or
+                content.</li>
+            <li>Misconduct as determined by statistical analysis or any other
+                misconduct that could compromise the confidentiality, integrity, or
+                security of the exam.</li>
+            <li>Violating any Infinity Atom or exam delivery provider's policy,
+                requirement, or rule.</li>
+        </ul>
+
+        <p>Infinity Atom reserves the right to invalidate your exam score and/or ban you
+           from the Credentialing Program if Infinity Atom determines you were not
+           compliant with these rules.</p>
+
+        <div class="pre-actions">
+            <button type="button" class="pre-link" @onclick="OnDecline">No, I don't agree</button>
+            <button type="button" class="pre-btn" @onclick="OnAccept">Yes, I agree</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnAccept { get; set; }
+    [Parameter] public EventCallback OnDecline { get; set; }
+}

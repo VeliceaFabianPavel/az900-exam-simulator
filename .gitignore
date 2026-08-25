@@ -1,0 +1,27 @@
+# ---------------------------------------------------------------------
+# Source material - NOT for redistribution.
+# The study guide is copyrighted. Keep it out of the repository.
+# ---------------------------------------------------------------------
+*.pdf
+_book.txt
+_chapters/
+_notes/
+
+# Python helpers used once to mine the PDF
+.venv/
+__pycache__/
+
+# Build output
+bin/
+obj/
+release/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+
+# OS
+Thumbs.db
+.DS_Store

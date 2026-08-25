@@ -1,0 +1,48 @@
+@using MockExam.Fluent.Models
+
+<Stem Item="Item" />
+
+<p class="instruction">
+    @(Item.SelectCount == 1
+        ? "Select the best answer."
+        : $"Select {Item.SelectCount} answers.")
+</p>
+
+<div class="choice-list" role="@(Item.SelectCount == 1 ? "radiogroup" : "group")">
+    @foreach (var c in Item.Choices)
+    {
+        var choice = c;
+        var selected = Response.Selected.Contains(choice.Key);
+        <label class="choice @(selected ? "selected" : "")">
+            <input type="@(Item.SelectCount == 1 ? "radio" : "checkbox")"
+                   name="@Item.Id"
+                   checked="@selected"
+                   @onchange="() => Toggle(choice.Key)" />
+            <span class="choice-key">@choice.Key.</span>
+            <span>@choice.Text</span>
+        </label>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public MultipleChoiceItem Item { get; set; } = default!;
+    [Parameter, EditorRequired] public Response Response { get; set; } = default!;
+    [Parameter] public EventCallback<Response> ResponseChanged { get; set; }
+
+    private async Task Toggle(string key)
+    {
+        var next = Response.Clone();
+
+        if (Item.SelectCount == 1)
+        {
+            next.Selected.Clear();
+            next.Selected.Add(key);
+        }
+        else if (!next.Selected.Remove(key) && next.Selected.Count < Item.SelectCount)
+        {
+            next.Selected.Add(key);
+        }
+
+        await ResponseChanged.InvokeAsync(next);
+    }
+}

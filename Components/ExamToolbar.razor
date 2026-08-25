@@ -1,0 +1,114 @@
+@using MockExam.Fluent.Models
+
+<nav class="exam-rail @(Expanded ? "expanded" : "")" aria-label="Exam toolbar">
+
+    <div class="rail-head">
+        @if (Expanded)
+        {
+            <span class="rail-head-ttl">Exam Toolbar</span>
+        }
+        <button type="button" class="rail-collapse"
+                title="@(Expanded ? "Collapse the exam toolbar" : "Exam Toolbar")"
+                aria-expanded="@Expanded"
+                @onclick="() => ExpandedChanged.InvokeAsync(!Expanded)">
+            <AppIcon Name="@(Expanded ? "chevrons-left" : "chevrons-right")" Size="18" />
+        </button>
+    </div>
+
+    @* -------------------------------------------- expandable sections *@
+    <RailSection Icon="details" Label="Exam Question Details" Expanded="Expanded"
+                 Open="_details" OpenChanged="v => _details = v">
+        <dl class="rail-facts">
+            <dt>Question</dt>
+            <dd>@(Session.Current.Seq is int s ? s.ToString() : "\u2014")</dd>
+            <dt>Type</dt>
+            <dd>@Describe(Session.Current.Item.Type)</dd>
+            <dt>Section</dt>
+            <dd>@Session.Current.Section</dd>
+            <dt>Status</dt>
+            <dd>@(Session.IsComplete(Session.Current) ? "Answered" : "Unanswered")</dd>
+        </dl>
+    </RailSection>
+
+    <RailSection Icon="check-circle" Label="Exam Progress" Expanded="Expanded"
+                 Open="_progress" OpenChanged="v => _progress = v">
+        <ol class="stepper">
+            @foreach (var step in Session.Steps())
+            {
+                <li class="step @step.State.ToString().ToLowerInvariant()">
+                    <span class="step-mark">
+                        @if (step.State == StepState.Done)
+                        {
+                            <AppIcon Name="check" Size="12" />
+                        }
+                        else if (step.State == StepState.Current)
+                        {
+                            <AppIcon Name="pin" Size="12" />
+                        }
+                    </span>
+                    <span class="step-lbl">@step.Label</span>
+                </li>
+            }
+        </ol>
+    </RailSection>
+
+    <div class="rail-sep"></div>
+
+    @* ------------------------------------------------- simple commands *@
+    <RailCommand Icon="pause" Label="Take a Break" Expanded="Expanded"
+                 Selected="@(Active == "break")" OnClick="@(() => Invoke("break"))" />
+
+    <RailCommand Icon="calculator" Label="Calculator" Expanded="Expanded"
+                 Selected="@(Active == "calculator")" OnClick="@(() => Invoke("calculator"))" />
+
+    <RailSection Icon="sun" Label="Color Scheme" Expanded="Expanded"
+                 Open="_scheme" OpenChanged="v => _scheme = v">
+        <div class="rail-choices">
+            @foreach (var mode in Modes)
+            {
+                var m = mode;
+                <button type="button" class="rail-choice @(Mode == m.Value ? "selected" : "")"
+                        @onclick="() => ModeChanged.InvokeAsync(m.Value)">
+                    @m.Label
+                </button>
+            }
+        </div>
+    </RailSection>
+
+    <RailCommand Icon="question" Label="Help" Expanded="Expanded"
+                 Selected="@(Active == "help")" OnClick="@(() => Invoke("help"))" />
+</nav>
+
+@code {
+    [Parameter, EditorRequired] public ExamSession Session { get; set; } = default!;
+    [Parameter] public bool Expanded { get; set; }
+    [Parameter] public EventCallback<bool> ExpandedChanged { get; set; }
+    [Parameter] public string? Active { get; set; }
+    [Parameter] public EventCallback<string> OnCommand { get; set; }
+    [Parameter] public DesignThemeModes Mode { get; set; }
+    [Parameter] public EventCallback<DesignThemeModes> ModeChanged { get; set; }
+
+    private bool _details;
+    private bool _progress = true;
+    private bool _scheme;
+
+    private static readonly (string Label, DesignThemeModes Value)[] Modes =
+    [
+        ("System", DesignThemeModes.System),
+        ("Light", DesignThemeModes.Light),
+        ("Dark", DesignThemeModes.Dark)
+    ];
+
+    private Task Invoke(string command) => OnCommand.InvokeAsync(command);
+
+    private static string Describe(ItemType type) => type switch
+    {
+        ItemType.MultipleChoice => "Multiple choice",
+        ItemType.BuildList => "Build list",
+        ItemType.DragDrop => "Drag and drop",
+        ItemType.ActiveScreen => "Active screen",
+        ItemType.HotArea => "Hot area",
+        ItemType.Multisource => "Yes / No",
+        _ => "Information"
+    };
+}

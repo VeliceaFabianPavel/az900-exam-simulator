@@ -1,0 +1,40 @@
+@using MockExam.Fluent.Models
+
+<Stem Item="Item" />
+
+<p class="instruction">Work area &mdash; select the correct area in the graphic.</p>
+
+<div class="screen-sim">
+    <div class="screen-chrome">
+        <span class="screen-dot"></span>
+        <span class="screen-name">@Item.ScreenTitle</span>
+    </div>
+    <div class="screen-body hotarea" role="group" aria-label="@Item.ImageAlt">
+        @foreach (var spot in Item.Spots)
+        {
+            var s = spot;
+            var selected = Response.Selected.Contains(s.Key);
+            <button type="button"
+                    class="hotspot @(selected ? "selected" : "")"
+                    style="left:@(s.X)%;top:@(s.Y)%;width:@(s.W)%;height:@(s.H)%"
+                    aria-pressed="@selected"
+                    @onclick="() => Select(s.Key)">
+                @s.Label
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public HotAreaItem Item { get; set; } = default!;
+    [Parameter, EditorRequired] public Response Response { get; set; } = default!;
+    [Parameter] public EventCallback<Response> ResponseChanged { get; set; }
+
+    private async Task Select(string key)
+    {
+        var next = Response.Clone();
+        next.Selected.Clear();
+        next.Selected.Add(key);
+        await ResponseChanged.InvokeAsync(next);
+    }
+}
