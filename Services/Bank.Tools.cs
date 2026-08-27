@@ -11,110 +11,142 @@ public static partial class QuestionBank
     {
         yield return Mc("mt-001", D3, "Describe features and tools for managing Azure resources", R8,
             """
-            Which Azure management tool is a web-based graphical interface that can be used from
-            any device with a browser and requires no installation?
+            Which Azure management tool is a web-based graphical interface that needs no
+            installation, and what is its main limitation?
             """,
             [
-                "The Azure portal.",
-                "Azure PowerShell.",
-                "The Azure CLI.",
-                "The Azure mobile app."
+                "The Azure portal, whose limitation is that it is not scriptable, so it suits one-off tasks rather than repeated bulk work.",
+                "The Azure portal, whose limitation is that it works only from Windows computers.",
+                "Azure Cloud Shell, whose limitation is that it provides no graphical interface for resources.",
+                "The Azure mobile app, whose limitation is that it requires a local installation on a desktop."
             ], "A",
             """
             The Azure portal is the browser-based graphical interface for viewing, creating and
-            managing resources. It requires no installation and works from Windows, macOS, Linux
-            and tablet devices.
+            managing resources. It needs no installation and works from Windows, macOS, Linux and
+            tablets, so the platform claim in option B is wrong.
 
-            It is well suited to simple, one-off tasks but is not scriptable, which makes it a poor
-            fit for repeated bulk deployments.
+            Its limitation is repeatability rather than reach. Every action is a manual one, so
+            fifty identical deployments mean fifty passes through a wizard, which is where the
+            command-line tools and templates take over.
+            """,
+            """
+            All four options pair a tool with a limitation. Check the limitation as carefully as the
+            tool, since two of them are simply untrue.
             """);
 
         yield return Mc("mt-002", D3, "Describe features and tools for managing Azure resources", R8,
             """
-            You must deploy fifty identically configured virtual machines and repeat the same
-            deployment in three other subscriptions.
+            You must deploy fifty identically configured virtual machines, repeat the same
+            deployment in three other subscriptions, and be able to prove later exactly what was
+            deployed.
 
             Which approach is most appropriate?
             """,
             [
-                "Use Azure PowerShell or the Azure CLI with a script.",
-                "Use the Azure portal and repeat the creation wizard for each virtual machine.",
-                "Use the Azure mobile app.",
-                "Use Azure Advisor."
+                "Declare the environment in an ARM template or Bicep file, keep it in source control, and deploy it to each subscription.",
+                "Use the Azure portal creation wizard and repeat it for each virtual machine.",
+                "Use the Azure mobile app to create the machines in batches.",
+                "Ask Azure Advisor to generate the deployment."
             ], "A",
             """
-            Scripting with Azure PowerShell or the Azure CLI makes the deployment repeatable and
-            fast, and the same script can be run against several subscriptions without manual
-            steps.
+            A script would be a reasonable answer to the first two requirements, but the third
+            requirement is what settles it. A template declares the desired end state in a file that
+            can be reviewed, versioned and re-deployed, so the record of what was deployed is the
+            artefact itself.
 
-            Repeating a portal wizard fifty times is slow and error-prone, and the mobile app is
-            not intended for bulk work at all.
+            Repeating a wizard fifty times is slow and error-prone and leaves no such record. The
+            mobile app is for quick actions, and Advisor recommends changes rather than deploying
+            anything.
+            """,
+            """
+            Two of the three requirements are about repetition, which several tools handle. The
+            third is about evidence, and that narrows it to one.
             """);
 
         yield return Mc("mt-003", D3, "Describe features and tools for managing Azure resources", R8,
             """
-            What is the relationship between Azure PowerShell and the Azure CLI?
+            A team is deciding between Azure PowerShell and the Azure CLI for its automation.
+
+            Which statement is correct?
             """,
             [
-                "They provide broadly equivalent capabilities using different syntax, so the choice is usually one of familiarity.",
-                "The Azure CLI can perform tasks that Azure PowerShell cannot perform at all.",
+                "Both call the same Azure REST API and offer broadly equivalent capabilities with different syntax, and both run on Windows, Linux and macOS, so the choice is largely one of familiarity.",
+                "The Azure CLI can perform management tasks that Azure PowerShell cannot perform at all.",
                 "Azure PowerShell runs only on Windows and the Azure CLI runs only on Linux.",
-                "The Azure CLI is a graphical tool and Azure PowerShell is a command-line tool."
+                "The Azure CLI is graphical and Azure PowerShell is command-line, so they suit different audiences."
             ], "A",
             """
-            Both tools call the same underlying Azure REST API and offer broadly the same
-            capabilities. Azure PowerShell uses cmdlet syntax while the Azure CLI uses a Bash-like
-            command syntax, so teams generally choose the one that matches their existing skills.
+            Both tools sit on the same Azure REST API, which is why their capabilities line up so
+            closely. Azure PowerShell uses cmdlet syntax and returns objects; the Azure CLI uses a
+            Bash-like command syntax and returns JSON by default.
 
-            Both run on Windows, Linux and macOS, and both can be used in Azure Cloud Shell.
+            Both are cross-platform and both are available in Azure Cloud Shell, so neither the
+            platform claim nor the graphical claim survives. In practice teams pick the one matching
+            the skills and scripting language they already use.
+            """,
+            """
+            Three of these options assert a hard limitation on one of the two tools. Ask whether any
+            of those limitations actually exists.
             """);
 
         yield return Mc("mt-004", D3, "Describe features and tools for managing Azure resources", R8,
             """
+            A consultant on a locked-down client laptop cannot install anything but must run Azure
+            CLI commands.
+
             Which statement about Azure Cloud Shell is correct?
             """,
             [
-                "It is a browser-based shell in which you choose either Bash or PowerShell for the session, and it requires a backing storage account.",
-                "It runs Bash and PowerShell simultaneously in the same session.",
-                "It must be installed locally before it can be used.",
-                "It can only be used from a Windows computer."
+                "It is an authenticated browser-based shell in which you choose either Bash or PowerShell per session, and it needs a backing storage account to persist files between sessions.",
+                "It runs Bash and PowerShell simultaneously in one session, so no choice is needed.",
+                "It must be installed locally before it can be used, which rules it out here.",
+                "It can be used only from a Windows computer."
             ], "A",
             """
-            Azure Cloud Shell provides an authenticated shell in the browser. You select either
-            Bash or PowerShell for the session, and a storage account is required to persist files
-            between sessions.
+            Cloud Shell gives an already-authenticated shell inside the browser, which is exactly
+            what a machine with no install rights needs. You choose Bash or PowerShell for the
+            session rather than getting both at once.
 
-            It needs no local installation and can be reached from the Azure portal or directly,
-            which makes it useful when installing tools locally is not practical.
+            The storage account is the detail worth remembering: Cloud Shell attaches a file share
+            so scripts and files survive between sessions, and it prompts to create one the first
+            time you use it. Nothing is installed locally and any operating system can reach it.
+            """,
+            """
+            Two facts define this service: what you must pick at the start of a session, and what it
+            asks you to create the first time you run it.
             """);
 
         yield return Mc("mt-005", D3, "Describe features and tools for managing Azure resources", R8,
             """
-            An administrator is away from the office and needs to check resource health, view
-            alerts and restart a web app from a phone.
+            An administrator away from the office must check resource health, review alerts and
+            restart a web app from a phone.
 
             Which tool should they use?
             """,
             [
                 "The Azure mobile app.",
-                "The Azure portal on a desktop computer.",
-                "An ARM template.",
+                "The Azure portal, which has no mobile-capable interface.",
+                "An ARM template deployment.",
                 "Azure Advisor."
             ], "A",
             """
-            The Azure mobile app, available for Android and iOS, is designed for exactly this
-            scenario: checking resource health and alerts and performing quick actions such as
-            restarting a web app or virtual machine, and it can even run CLI or PowerShell
-            commands.
+            The Azure mobile app, for Android and iOS, is built for this: checking resource health
+            and alerts and performing quick actions such as restarting a web app or virtual machine.
+            It can even run CLI or PowerShell commands through an embedded Cloud Shell.
 
-            It is deliberately limited compared with the portal and is not intended for complex
-            management work.
+            It is deliberately narrower than the portal and is not meant for complex management. The
+            claim in option B is also false, since the portal is usable on tablets and phones; the
+            app is simply better suited to it.
+            """,
+            """
+            One distractor makes a factual claim about the portal that is worth checking before you
+            accept it as the reason.
             """);
 
         yield return Drag("mt-006", D3, "Describe features and tools for managing Azure resources", R8,
             """
-            Match each scenario to the most appropriate Azure management tool. Each tool may be
-            used once, more than once, or not at all.
+            Match each scenario to the most appropriate Azure management tool. Each tool may be used
+            once, more than once, or not at all.
             """,
             "Management tools",
             [
@@ -127,42 +159,53 @@ public static partial class QuestionBank
                 ("Visually explore a service and change one setting on a single resource", 1),
                 ("Automate a repeatable deployment of many resources from a script", 2),
                 ("Check an alert and restart a virtual machine while away from a computer", 3),
-                ("Declare an entire environment as code so it can be deployed identically each time", 4)
+                ("Declare an entire environment as code so it deploys identically every time", 4),
+                ("Re-run the same deployment and have Azure converge the environment on the declared state", 4)
             ],
             """
-            The portal suits visual, one-off changes, and the command-line tools suit scripted
-            automation of many resources.
+            The portal suits visual, one-off changes; the command-line tools suit scripted
+            automation; and the mobile app covers quick actions from a phone.
 
-            The mobile app covers quick actions from a phone, and an Azure Resource Manager
-            template declares the desired infrastructure so the same environment can be deployed
-            repeatedly.
+            The last two rows both belong to templates, and the second of them explains why. A
+            script tells Azure what to do, so running it twice may do it twice; a template tells
+            Azure what should exist, so running it twice simply confirms the state. That idempotence
+            is the reason templates and scripts are not interchangeable.
+            """,
+            """
+            The final row describes a behaviour that a script does not have. Ask what happens when
+            each option is run for the second time.
             """);
 
         yield return Mc("mt-007", D3, "Describe features and tools for managing Azure resources", R8,
             """
-            Which statement best describes infrastructure as code using Azure Resource Manager
-            templates?
+            A team deploys the same ARM template twice in a row to the same resource group.
+
+            What happens, and why?
             """,
             [
-                "The template declares the desired end state, and Azure determines the steps needed to reach it.",
-                "The template lists each command to run, in order, to build the environment.",
-                "The template is a graphical diagram that must be redrawn for each deployment.",
-                "The template can only be used to create virtual machines."
+                "The environment converges on the declared state rather than duplicating resources, because a template declares the desired end state and Azure works out the steps.",
+                "A second copy of every resource is created, because a template lists the operations to perform.",
+                "The deployment fails, because a template can only be applied to an empty resource group.",
+                "Only virtual machines are affected, because templates can deploy nothing else."
             ], "A",
             """
             Azure Resource Manager templates are declarative: they describe what the environment
-            should look like, and Azure works out how to achieve that state. Re-deploying a
-            template converges the environment on the declared state rather than duplicating
-            resources.
+            should look like and leave the how to Azure. Re-deploying therefore converges the
+            environment on the declared state rather than duplicating anything, which is what makes
+            a template safe to run repeatedly in a pipeline.
 
-            An imperative approach, by contrast, specifies the exact sequence of commands to run,
-            which is what a shell script does.
+            An imperative approach, such as a shell script, specifies the exact sequence of
+            operations, and running it twice really can perform them twice.
+            """,
+            """
+            The question is really about the difference between describing a result and listing
+            steps. Which of those can safely be repeated?
             """);
 
         yield return Mc("mt-008", D3, "Describe features and tools for managing Azure resources", R8,
             """
-            Your company must apply Azure Policy and use Azure Monitor to govern servers that run
-            in an on-premises data centre and in another public cloud.
+            Your company must apply Azure Policy and use Azure Monitor to govern servers that will
+            remain in an on-premises data centre and in another public cloud.
 
             Which service should you use?
             """,
@@ -170,35 +213,44 @@ public static partial class QuestionBank
                 "Azure Arc.",
                 "Azure Migrate.",
                 "Azure Site Recovery.",
-                "Azure Virtual Desktop."
+                "Azure Stack HCI."
             ], "A",
             """
-            Azure Arc projects non-Azure resources into Azure Resource Manager so that they can be
-            managed like native Azure resources, including tagging, Azure Policy assignment,
-            role-based access control and Azure Monitor.
+            Azure Arc projects non-Azure resources into Azure Resource Manager so they can be
+            managed like native ones, including tagging, Azure Policy assignment, role-based access
+            control and Azure Monitor.
 
-            Azure Migrate moves workloads into Azure, and Site Recovery replicates them; neither
-            provides ongoing governance of resources that stay where they are.
+            The clause that rules out the alternatives is that the servers stay where they are.
+            Migrate moves workloads into Azure and Site Recovery replicates them for failover, so
+            both end with the workload somewhere else. Arc is the one that governs it in place.
+            """,
+            """
+            Several services connect Azure to servers elsewhere. Only one of them leaves those
+            servers exactly where they are.
             """);
 
         yield return Mc("mt-009", D3, "Describe features and tools for managing Azure resources", R8,
             """
-            How is an on-premises server onboarded to Azure Arc?
+            How is an on-premises server onboarded to Azure Arc, and where does the server run
+            afterwards?
             """,
             [
-                "By installing the Azure Connected Machine agent, after which the server receives an Azure Resource Manager identifier.",
-                "By migrating the server into an Azure region as a virtual machine.",
-                "By establishing an ExpressRoute circuit to the data centre.",
-                "By deploying an ARM template into the on-premises hypervisor."
+                "The Azure Connected Machine agent is installed; the server then has an Azure Resource Manager identifier and appears in the portal, while continuing to run on-premises.",
+                "The Azure Connected Machine agent is installed, after which the server is migrated into an Azure region as a virtual machine.",
+                "An ExpressRoute circuit is established to the data centre, which registers the servers automatically.",
+                "An ARM template is deployed into the on-premises hypervisor, which converts the server into an Azure resource."
             ], "A",
             """
-            Onboarding installs the Azure Connected Machine agent on the server. The server is then
-            represented in Azure with its own Resource Manager identifier, a managed identity, a
-            resource group and a subscription, and it appears in the portal alongside native
-            resources.
+            Onboarding installs the Azure Connected Machine agent. The server is then represented in
+            Azure with its own Resource Manager identifier, a managed identity, a resource group and
+            a subscription, and it appears in the portal alongside native resources.
 
-            The server itself stays where it is; Arc adds a management layer rather than moving the
-            workload.
+            Nothing moves. Arc adds a management projection over a server that keeps running exactly
+            where it was, which is the distinction between it and a migration service.
+            """,
+            """
+            Two options start the same way and end differently. Ask whether Arc is a management tool
+            or a migration tool.
             """);
 
         yield return YesNo("mt-010", D3, "Describe features and tools for managing Azure resources", R8,
@@ -209,76 +261,98 @@ public static partial class QuestionBank
             [
                 ("Azure Arc can extend Azure Policy to servers running in another public cloud.", true),
                 ("An Arc-enabled server is physically relocated into an Azure data centre.", false),
-                ("Kubernetes clusters running outside Azure can be attached to Azure Arc.", true)
+                ("Kubernetes clusters running outside Azure can be attached to Azure Arc.", true),
+                ("An Arc-enabled server can be given a managed identity and appear in the Azure portal.", true)
             ],
             """
             Arc extends Azure governance, including Azure Policy and Azure Monitor, to servers and
-            Kubernetes clusters wherever they run, including other public clouds and edge
-            locations.
+            Kubernetes clusters wherever they run, including other public clouds and edge locations.
 
-            The resources are not moved. Arc registers and manages them in place, which is exactly
-            what makes it a hybrid and multicloud management solution.
+            Nothing is relocated, and that is the single fact the whole question turns on. What Arc
+            creates is a representation: a Resource Manager identifier, a managed identity and an
+            entry in the portal, all pointing at a machine that never left its own rack.
+            """,
+            """
+            One statement claims something moves. Settling that answers the others, because the rest
+            describe what Arc creates instead of moving anything.
             """);
 
         yield return Mc("mt-011", D3, "Describe features and tools for managing Azure resources", R8,
             """
-            Which statement about a resource group's region is correct?
+            Which statement about the region of a resource group is correct?
             """,
             [
-                "The region determines where the resource group's metadata is stored; resources in the group can be deployed to other regions.",
-                "Every resource in the group must be deployed to the resource group's region.",
-                "The region determines which subscription is billed.",
-                "A resource group has no region."
+                "It determines where the group metadata is stored; the resources inside can be deployed to other regions, though that region must be reachable to manage the group.",
+                "Every resource in the group must be deployed to the group region.",
+                "It determines which subscription is billed for the resources in the group.",
+                "A resource group has no region at all."
             ], "A",
             """
-            A resource group has a location that determines where its metadata is stored, but the
-            resources it contains can be deployed to any region.
+            A resource group has a location, and it applies to the group metadata rather than
+            constraining its contents, so resources inside can sit in any region.
 
-            The region of the resource group can still matter for resilience, because that metadata
-            must be reachable in order to manage the group.
+            The second clause is the part that stops this being a trivia question. Because the
+            metadata lives somewhere, an outage in the group region can affect your ability to
+            manage the group even if every resource in it is healthy elsewhere, which is a genuine
+            consideration when planning for resilience.
+            """,
+            """
+            The common answer is that the region only affects metadata. Ask whether metadata being
+            somewhere can ever matter operationally.
             """);
 
         yield return Mc("mt-012", D3, "Describe features and tools for managing Azure resources", R8,
             """
-            You delete an Azure virtual machine through the portal.
+            An engineer deletes a virtual machine and is surprised that the subscription cost barely
+            changes.
 
-            What happens to the associated network interface, public IP address and managed disks?
+            What is the most likely explanation?
             """,
             [
-                "They are not deleted automatically and must be removed separately if they are no longer needed.",
-                "They are always deleted along with the virtual machine.",
-                "They are moved to a recycle bin for thirty days.",
-                "They are converted into a snapshot automatically."
+                "The network interface, public IP address and managed disks are not removed unless they are explicitly selected for deletion, and they keep incurring charges.",
+                "Deleting a virtual machine always removes its disks and IP address, so the cost must be unrelated.",
+                "The resources were moved to a recycle bin and are billed there for thirty days.",
+                "Azure converted the disks into snapshots automatically, which cost the same as the disks."
             ], "A",
             """
-            Deleting a virtual machine removes the compute resource but leaves associated resources
-            such as the network interface, public IP address and managed disks in place, and those
-            continue to incur charges.
+            Deleting a virtual machine removes the compute resource. Associated resources such as
+            the network interface, the public IP address and the managed disks are separate
+            resources and survive unless deletion is explicitly requested for them, so the storage
+            and IP charges continue.
 
-            Full cleanup therefore means deleting the associated resources as well, or deleting the
-            whole resource group if it contains nothing else that must be kept.
+            The disks are usually the largest of those, which is why the bill barely moves. Full
+            cleanup means deleting the associated resources too, or deleting the whole resource
+            group if nothing else in it needs to be kept.
+            """,
+            """
+            A virtual machine is really several resources that were created together. Ask which of
+            them the delete operation actually covers.
             """);
 
         yield return Mc("mt-013", D3, "Describe features and tools for managing Azure resources", R8,
             """
-            You want to stop paying compute charges for a development virtual machine overnight,
-            while keeping its configuration and data intact.
+            You want a development virtual machine to stop incurring compute charges overnight while
+            keeping its configuration and data intact.
 
             What should you do?
             """,
             [
-                "Stop and deallocate the virtual machine.",
-                "Delete the virtual machine.",
-                "Apply a ReadOnly lock to the virtual machine.",
-                "Resize the virtual machine to the smallest available size."
+                "Stop and deallocate the virtual machine, accepting that disk charges continue.",
+                "Shut the virtual machine down from inside the guest operating system.",
+                "Delete the virtual machine and redeploy it in the morning.",
+                "Resize the virtual machine to the smallest available size overnight."
             ], "A",
             """
-            Stopping and deallocating a virtual machine releases its compute resources so compute
-            charges cease, while the disks and configuration remain so the machine can be started
-            again later.
+            Deallocating releases the compute allocation so compute charges stop, while the disks
+            and configuration remain and the machine can be started again in the morning. The disks
+            are still billed, which is what makes the correct answer honest rather than absolute.
 
-            Deleting it would remove the configuration, a lock does not affect billing, and
-            resizing merely reduces the rate rather than stopping it.
+            A guest shutdown is the trap: the machine looks off and remains allocated, so it keeps
+            billing. Deleting it would lose the configuration, and resizing only lowers the rate.
+            """,
+            """
+            Two options stop the machine and only one stops the compute bill. The difference is what
+            Azure does with the allocation.
             """);
 
         yield return Mc("mt-014", D3, "Describe features and tools for managing Azure resources", R8,
@@ -286,55 +360,77 @@ public static partial class QuestionBank
             In the Azure portal, what is a blade?
             """,
             [
-                "A panel that displays the settings, controls and information for a particular resource, service or task.",
-                "A physical server in an Azure data centre.",
+                "A panel that presents the settings, controls and information for a particular resource, service or task.",
+                "A physical server chassis in an Azure data centre.",
                 "A command executed in Azure Cloud Shell.",
-                "A template used to deploy resources."
+                "A reusable JSON deployment template."
             ], "A",
             """
-            In the Azure portal, a blade is a panel or page presenting the configuration options,
-            controls and monitoring information for a specific resource, service or task, and it
-            serves as the entry point for working with that item.
+            In the Azure portal a blade is a panel or page presenting the configuration options,
+            controls and monitoring information for a specific resource, service or task, and it is
+            the entry point for working with that item.
 
-            The term describes the portal's user interface and has nothing to do with server
-            hardware.
+            The term is purely about the portal interface. Blade servers are a real piece of data
+            centre hardware, which is exactly why that distractor is here, and the two meanings have
+            nothing to do with each other.
+            """,
+            """
+            The word has a well-known hardware meaning as well. This question is about the interface,
+            not the data centre.
             """);
 
         yield return Mc("mt-015", D3, "Describe features and tools for managing Azure resources", R8,
             """
-            Which naming requirement applies when you create a storage account in the Azure portal?
+            A colleague cannot understand why the storage account name "prodstorage" is rejected as
+            unavailable when no such account exists in the subscription.
+
+            Which statement explains this?
             """,
             [
-                "The name must be globally unique and consist only of lowercase letters and numbers.",
-                "The name must be unique within the resource group and may contain hyphens.",
-                "The name must be unique within the subscription and may contain uppercase letters.",
-                "The name has no restrictions."
+                "Storage account names must be globally unique across all of Azure, because the name forms part of a public DNS name.",
+                "Storage account names must be unique within the resource group, so another group in the subscription must be using it.",
+                "Storage account names must be unique within the subscription, so a deleted account is still holding the name.",
+                "Storage account names have no uniqueness requirement, so the error must be a transient fault."
             ], "A",
             """
-            A storage account name forms part of a globally unique DNS name, so it must be unique
-            across all Azure storage accounts and may contain only lowercase letters and digits.
+            A storage account name becomes part of a globally unique DNS name, so it must be unique
+            across every Azure storage account in the world, not merely within your subscription.
+            Some other customer already has it.
 
-            Because the namespace is global, a descriptive name is often already taken, which is
-            why organisations usually adopt a naming convention with a suffix.
+            The same DNS origin explains the character rules: lowercase letters and digits only,
+            three to twenty-four characters. It is also why organisations adopt naming conventions
+            with an organisation or environment suffix, since obvious names are long gone.
+            """,
+            """
+            The name is not being checked against anything you own. Ask where a storage account name
+            ends up being used, and how wide that namespace is.
             """);
 
         yield return Mc("mt-016", D3, "Describe features and tools for managing Azure resources", R8,
             """
-            Which tool would you install on a Windows, macOS or Linux computer to browse and manage
-            the contents of Azure storage accounts through a graphical interface?
+            An analyst wants to browse blobs, files, queues and tables across several storage
+            accounts in a graphical interface, from a Mac.
+
+            Which tool should they install, and what does it use underneath for transfers?
             """,
             [
-                "Azure Storage Explorer.",
-                "AzCopy.",
-                "Azure Cloud Shell.",
-                "The Azure mobile app."
+                "Azure Storage Explorer, which uses AzCopy underneath for data movement.",
+                "Azure Storage Explorer, which is a Windows-only application, so a virtual machine is needed.",
+                "AzCopy, which provides a graphical interface on macOS.",
+                "Azure Cloud Shell, which is the graphical storage browser."
             ], "A",
             """
             Azure Storage Explorer is the standalone graphical application for browsing and managing
-            blobs, files, queues and tables, and it is available for Windows, macOS and Linux.
+            blobs, files, queues and tables, and it runs on Windows, macOS and Linux, so no virtual
+            machine is required.
 
-            AzCopy is the command-line transfer utility that Storage Explorer uses underneath for
-            data movement.
+            The relationship with AzCopy is the second half: Storage Explorer drives AzCopy for its
+            transfers, which is why the two behave identically and why AzCopy is the answer whenever
+            the requirement is to script rather than to browse.
+            """,
+            """
+            Two options name the right application and disagree about a platform limitation. Then
+            recall which tool actually moves the bytes.
             """);
 
         yield return Dropdowns("mt-017", D3, "Describe features and tools for managing Azure resources", R8,
@@ -348,14 +444,22 @@ public static partial class QuestionBank
                 ("A JSON file that declares the resources to deploy is",
                     ["the Azure portal", "Azure Cloud Shell", "the Azure CLI", "an ARM template"], 4),
                 ("The service that extends Azure management to servers outside Azure is",
-                    ["Azure Arc", "Azure Migrate", "Azure Advisor", "Azure Monitor"], 1)
+                    ["Azure Arc", "Azure Migrate", "Azure Advisor", "Azure Monitor"], 1),
+                ("The concise language that is transpiled into that JSON file before deployment is",
+                    ["Bicep", "Kusto Query Language", "YAML", "PowerShell"], 1)
             ],
             """
-            Azure Cloud Shell is the authenticated browser shell, and an Azure Resource Manager
-            template is the JSON document that declares the desired resources.
+            Azure Cloud Shell is the authenticated browser shell, an Azure Resource Manager template
+            is the JSON document declaring the desired resources, and Azure Arc brings servers,
+            Kubernetes clusters and data services outside Azure under Azure management.
 
-            Azure Arc is the service that brings servers, Kubernetes clusters and data services
-            outside Azure under Azure management and governance.
+            The last row links back to the second. Bicep is an authoring language rather than a
+            separate deployment path: it compiles to the same JSON template, so it changes the
+            experience of writing infrastructure without changing how it is deployed.
+            """,
+            """
+            The fourth row refers back to the second. Work out what the JSON file is before deciding
+            what produces it.
             """);
 
         yield return Mc("mt-018", D3, "Describe features and tools for managing Azure resources", R8,
@@ -364,52 +468,72 @@ public static partial class QuestionBank
             approach to deploying infrastructure?
             """,
             [
-                "A declarative approach states the desired end state, whereas an imperative approach specifies the sequence of commands to reach it.",
-                "A declarative approach specifies the sequence of commands, whereas an imperative approach states the desired end state.",
-                "A declarative approach can only be used in the Azure portal.",
-                "An imperative approach cannot be automated."
+                "A declarative approach states the desired end state and lets the platform determine the steps; an imperative approach specifies the sequence of operations. Both can be automated.",
+                "A declarative approach specifies the sequence of operations, whereas an imperative approach states the desired end state.",
+                "A declarative approach can only be used through the Azure portal.",
+                "An imperative approach cannot be automated, which is why templates exist."
             ], "A",
             """
             Declarative deployment, as used by Azure Resource Manager templates and Bicep, describes
-            what the result should be and lets the platform work out how to get there.
+            what the result should be. Imperative deployment, as used by a PowerShell or CLI script,
+            lists the operations to perform in order.
 
-            Imperative deployment, as used by a PowerShell or CLI script, lists the operations to
-            perform in order. Both can be automated; they differ in how the intent is expressed.
+            The final clause matters because it removes the assumption that declarative means
+            automated and imperative means manual. Both are automated; they differ in how intent is
+            expressed, and therefore in what happens when you run the same thing twice.
+            """,
+            """
+            One distractor implies that scripts cannot be automated. Check that before letting it
+            influence the choice.
             """);
 
         yield return Mc("mt-019", D3, "Describe features and tools for managing Azure resources", R8,
             """
-            Which authoring language is designed as a more concise alternative to JSON Azure
-            Resource Manager templates and is transpiled into them before deployment?
+            Which language is designed as a more concise alternative to JSON Azure Resource Manager
+            templates, transpiles into them before deployment, and is authored by Microsoft?
             """,
-            ["Bicep.", "YAML.", "Kusto Query Language.", "Terraform HCL."], "A",
+            ["Bicep.", "Terraform HCL.", "Kusto Query Language.", "YAML."], "A",
             """
-            Bicep is a domain-specific language for declaring Azure infrastructure with far less
-            syntax than raw JSON. Bicep files are transpiled into standard Azure Resource Manager
-            templates, so they gain the same deployment behaviour.
+            Bicep is Microsoft own domain-specific language for declaring Azure infrastructure with
+            far less syntax than raw JSON. Bicep files are transpiled into standard Azure Resource
+            Manager templates, so they inherit exactly the same deployment behaviour.
 
-            Kusto Query Language is used for querying logs, and Terraform is a third-party tool
-            rather than a native template language.
+            Terraform is the distractor worth being precise about: it is a genuine and widely used
+            infrastructure-as-code language for Azure, but it is a third-party tool with its own
+            state model rather than a native template language. Kusto queries logs, and YAML is a
+            data format rather than an ARM authoring language.
+            """,
+            """
+            Two of these really are used to declare Azure infrastructure. The last clause of the
+            question separates them.
             """);
 
         yield return Mc("mt-020", D3, "Describe features and tools for managing Azure resources", R8,
             """
-            Which Azure Arc mode allows data services to be managed locally with only limited Azure
-            integration, so that data remains within a required geographic location?
+            An organisation must run Arc-enabled data services under local management because a
+            residency rule prevents operational data being sent continuously to Azure.
+
+            Which connectivity mode should it use, and what does it give up?
             """,
             [
-                "Disconnected mode.",
-                "Connected mode.",
-                "Preview mode.",
-                "Read-only mode."
+                "The disconnected, or indirectly connected, mode, which keeps management local and exports metadata and billing information periodically instead of offering direct portal management.",
+                "The disconnected mode, which offers the same direct portal management and continuous monitoring as the connected mode.",
+                "The connected mode, which is the only mode that satisfies residency requirements.",
+                "A read-only mode, which permits monitoring but not management."
             ], "A",
             """
-            Disconnected mode keeps Arc-enabled data services under local management and does not
-            automatically send data to Azure, which supports data residency requirements while
-            still allowing metadata and billing information to be exported periodically.
+            The disconnected, or indirectly connected, mode keeps Arc-enabled data services under
+            local management and does not stream data to Azure continuously, which is what supports
+            a residency requirement. Metadata and billing information are exported periodically
+            instead.
 
-            Connected mode provides the full experience, with direct management in the Azure portal
-            and continuous monitoring and inventory.
+            The trade is the second half of the answer. Connected mode gives direct management from
+            the Azure portal along with continuous monitoring and inventory, and that is precisely
+            what the disconnected mode gives up in exchange for keeping the data local.
+            """,
+            """
+            Two options name the same mode and differ on what it costs you. A mode that keeps data
+            local cannot also be offering continuous cloud management.
             """);
     }
 }

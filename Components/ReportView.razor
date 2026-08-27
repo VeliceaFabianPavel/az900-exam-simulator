@@ -20,6 +20,11 @@
     {
         <FluentBadge Appearance="Appearance.Accent">@Incorrect to revise</FluentBadge>
     }
+
+    @if (Assisted > 0)
+    {
+        <FluentBadge Appearance="Appearance.Neutral">@Assisted needed help</FluentBadge>
+    }
 </div>
 
 @if (Rows.Count == 0)
@@ -43,6 +48,14 @@ else
                     @if (r.Marked)
                     {
                         <span class="report-flag"><AppIcon Name="flag" Size="16" /> Flagged</span>
+                    }
+                    @if (r.UsedHelp)
+                    {
+                        <span class="report-assist"><AppIcon Name="eye" Size="16" /> Answer revealed</span>
+                    }
+                    else if (r.UsedHint)
+                    {
+                        <span class="report-assist"><AppIcon Name="bulb" Size="16" /> Hint taken</span>
                     }
                     <span class="report-domain">@r.Item.Domain.ShortName()</span>
                 </header>
@@ -97,13 +110,15 @@ else
     [Parameter] public EventCallback OnBack { get; set; }
 
     private static readonly string[] Filters =
-        ["All questions", "Incorrect only", "Correct only", "Flagged", "Unanswered"];
+        ["All questions", "Incorrect only", "Correct only", "Flagged", "Unanswered", "Needed help"];
 
     private string _filter = "All questions";
 
     private IReadOnlyList<ItemResult> All => Session.Results();
 
     private int Incorrect => All.Count(r => !r.Correct);
+
+    private int Assisted => All.Count(r => r.Assisted);
 
     private List<ItemResult> Rows => [.. All.Where(Matches)];
 
@@ -113,6 +128,7 @@ else
         "Correct only" => r.Correct,
         "Flagged" => r.Marked,
         "Unanswered" => !r.Answered,
+        "Needed help" => r.Assisted,
         _ => true
     };
 }

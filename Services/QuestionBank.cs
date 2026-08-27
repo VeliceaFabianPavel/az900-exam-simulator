@@ -40,7 +40,8 @@ public static partial class QuestionBank
     /// <summary>Single-answer or multi-answer multiple choice. <paramref name="answer"/> is like "B" or "B,D".</summary>
     private static MultipleChoiceItem Mc(
         string id, ExamDomain domain, string objective, string reference,
-        string stem, string[] choices, string answer, string explanation) => new()
+        string stem, string[] choices, string answer, string explanation,
+        string hint = "") => new()
         {
             Id = id,
             Domain = domain,
@@ -49,13 +50,15 @@ public static partial class QuestionBank
             Stem = Para(stem),
             Choices = [.. choices.Select((t, i) => new Choice(Keys[i].ToString(), t))],
             Answer = [.. answer.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)],
-            Explanation = Para(explanation)
+            Explanation = Para(explanation),
+            Hint = hint
         };
 
     /// <summary>Ordered build list. <paramref name="answer"/> lists source indexes (1-based) in order.</summary>
     private static BuildListItem Build(
         string id, ExamDomain domain, string objective, string reference,
-        string stem, string sourceLabel, string[] source, int[] answer, string explanation) => new()
+        string stem, string sourceLabel, string[] source, int[] answer, string explanation,
+        string hint = "") => new()
         {
             Id = id,
             Domain = domain,
@@ -65,7 +68,8 @@ public static partial class QuestionBank
             SourceLabel = sourceLabel,
             Source = [.. source.Select((t, i) => new Choice($"s{i + 1}", t))],
             Answer = [.. answer.Select(i => $"s{i}")],
-            Explanation = Para(explanation)
+            Explanation = Para(explanation),
+            Hint = hint
         };
 
     /// <summary>
@@ -75,7 +79,8 @@ public static partial class QuestionBank
     private static DragDropItem Drag(
         string id, ExamDomain domain, string objective, string reference,
         string stem, string sourceLabel, string[] source,
-        (string Target, int SourceIndex)[] pairs, string explanation) => new()
+        (string Target, int SourceIndex)[] pairs, string explanation,
+        string hint = "") => new()
         {
             Id = id,
             Domain = domain,
@@ -88,7 +93,8 @@ public static partial class QuestionBank
             Answer = pairs
                 .Select((p, i) => (Key: $"t{i + 1}", Val: $"v{p.SourceIndex}"))
                 .ToDictionary(x => x.Key, x => x.Val),
-            Explanation = Para(explanation)
+            Explanation = Para(explanation),
+            Hint = hint
         };
 
     /// <summary>
@@ -97,7 +103,8 @@ public static partial class QuestionBank
     /// </summary>
     private static ActiveScreenItem Dropdowns(
         string id, ExamDomain domain, string objective, string reference,
-        string stem, (string Label, string[] Options, int Correct)[] rows, string explanation) => new()
+        string stem, (string Label, string[] Options, int Correct)[] rows, string explanation,
+        string hint = "") => new()
         {
             Id = id,
             Domain = domain,
@@ -108,13 +115,15 @@ public static partial class QuestionBank
             Answer = rows
                 .Select((r, i) => (Key: $"r{i + 1}", Val: r.Options[r.Correct - 1]))
                 .ToDictionary(x => x.Key, x => x.Val),
-            Explanation = Para(explanation)
+            Explanation = Para(explanation),
+            Hint = hint
         };
 
     /// <summary>Yes/No statement grid. <paramref name="statements"/> pairs text with the keyed answer.</summary>
     private static MultisourceItem YesNo(
         string id, ExamDomain domain, string objective, string reference,
-        string stem, (string Text, bool Yes)[] statements, string explanation) => new()
+        string stem, (string Text, bool Yes)[] statements, string explanation,
+        string hint = "") => new()
         {
             Id = id,
             Domain = domain,
@@ -125,20 +134,52 @@ public static partial class QuestionBank
             Answer = statements
                 .Select((s, i) => (Key: $"s{i + 1}", s.Yes))
                 .ToDictionary(x => x.Key, x => x.Yes),
-            Explanation = Para(explanation)
+            Explanation = Para(explanation),
+            Hint = hint
         };
 
     /// <summary>
-    /// Hot area item. Spots are laid out automatically as a single row of equal
-    /// panels; <paramref name="answer"/> is the 1-based index of the correct panel.
+    /// Hot area drawn over a diagram, the way the live exam presents one. Each region is a
+    /// transparent rectangle given as percentages of the image box, so the graphic supplies
+    /// the labels and the candidate has to read it rather than pick from a list.
+    /// <paramref name="answer"/> is the 1-based index of the correct region.
     /// </summary>
-    private static HotAreaItem Hot(
+    private static HotAreaItem HotImage(
         string id, ExamDomain domain, string objective, string reference,
-        string stem, string screenTitle, string[] spots, int answer, string explanation)
+        string stem, string screenTitle, string image, string imageAlt,
+        (string Label, double X, double Y, double W, double H)[] regions,
+        int answer, string explanation, string hint = "") => new()
+        {
+            Id = id,
+            Domain = domain,
+            Objective = objective,
+            Reference = reference,
+            Stem = Para(stem),
+            ScreenTitle = screenTitle,
+            ImageSrc = image,
+            ImageAlt = imageAlt,
+            Spots = [.. regions.Select((r, i) =>
+                new HotSpot($"h{i + 1}", r.Label, r.X, r.Y, r.W, r.H))],
+            Answer = $"h{answer}",
+            Explanation = Para(explanation),
+            Hint = hint
+        };
+
+    /// <summary>
+    /// Hot area whose spots are concentric rectangles, listed outermost first. Each level is
+    /// inset from the one containing it and keeps a band clear at the top for its own label,
+    /// so the nesting is readable and every ring stays clickable.
+    /// <paramref name="answer"/> is the 1-based index of the correct ring.
+    /// </summary>
+    private static HotAreaItem HotNested(
+        string id, ExamDomain domain, string objective, string reference,
+        string stem, string screenTitle, string[] spots, int answer, string explanation,
+        string hint = "")
     {
-        var n = spots.Length;
-        var gap = 3.0;
-        var w = (100.0 - gap * (n + 1)) / n;
+        var levels = Math.Max(spots.Length - 1, 1);
+        var dx = 14.0 / levels;       // horizontal inset per level, each side
+        var dTop = 46.0 / levels;     // top inset, which doubles as the label band
+        var dBottom = 18.0 / levels;
 
         return new HotAreaItem
         {
@@ -149,10 +190,17 @@ public static partial class QuestionBank
             Stem = Para(stem),
             ScreenTitle = screenTitle,
             ImageAlt = screenTitle,
-            Spots = [.. spots.Select((s, i) =>
-                new HotSpot($"h{i + 1}", s, gap + i * (w + gap), 14, w, 68))],
+            Nested = true,
+            Spots = [.. spots.Select((s, i) => new HotSpot(
+                $"h{i + 1}", s,
+                Math.Round(3 + i * dx, 2),
+                Math.Round(8 + i * dTop, 2),
+                Math.Round(94 - 2 * i * dx, 2),
+                Math.Round(84 - i * (dTop + dBottom), 2)))],
             Answer = $"h{answer}",
-            Explanation = Para(explanation)
+            Explanation = Para(explanation),
+            Hint = hint
         };
     }
+
 }

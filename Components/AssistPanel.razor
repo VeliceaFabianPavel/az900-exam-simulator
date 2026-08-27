@@ -1,0 +1,63 @@
+@using MockExam.Fluent.Models
+@* Practice-mode assistance shown under the question: a nudge, then the full answer. *@
+
+@if (State.HintOpen)
+{
+    <aside class="assist hint" aria-live="polite">
+        <header class="assist-head">
+            <AppIcon Name="bulb" Size="16" />
+            <span>Hint</span>
+            <button type="button" class="assist-close" title="Hide hint" @onclick="() => OnToggleHint.InvokeAsync()">
+                <AppIcon Name="dismiss" Size="14" />
+            </button>
+        </header>
+        <p class="assist-body">@Item.HintText</p>
+        @if (!State.HelpOpen)
+        {
+            <p class="assist-more">
+                Still stuck? Use <b>Show answer</b> for the key and the full explanation.
+            </p>
+        }
+    </aside>
+}
+
+@if (State.HelpOpen)
+{
+    <aside class="assist help" aria-live="polite">
+        <header class="assist-head">
+            <AppIcon Name="eye" Size="16" />
+            <span>Answer and explanation</span>
+            <button type="button" class="assist-close" title="Hide answer" @onclick="() => OnToggleHelp.InvokeAsync()">
+                <AppIcon Name="dismiss" Size="14" />
+            </button>
+        </header>
+
+        <div class="assist-body">
+            <h4>Correct answer</h4>
+            <ul class="assist-key">
+                @foreach (var line in Item.CorrectAnswerLines)
+                {
+                    <li>@line</li>
+                }
+            </ul>
+
+            <h4>Why</h4>
+            @((MarkupString)Item.Explanation)
+
+            <p class="assist-ref">
+                @Item.Objective
+                @if (!string.IsNullOrWhiteSpace(Item.Reference))
+                {
+                    <span> &middot; @Item.Reference</span>
+                }
+            </p>
+        </div>
+    </aside>
+}
+
+@code {
+    [Parameter, EditorRequired] public Item Item { get; set; } = default!;
+    [Parameter, EditorRequired] public ItemState State { get; set; } = default!;
+    [Parameter] public EventCallback OnToggleHint { get; set; }
+    [Parameter] public EventCallback OnToggleHelp { get; set; }
+}

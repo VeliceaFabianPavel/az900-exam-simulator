@@ -1,5 +1,5 @@
 @using MockExam.Fluent.Models
-@* Pre-exam screen 0: choose one of the ten practice forms. *@
+@* Pre-exam screen 0: choose a delivery mode, then one of the ten practice forms. *@
 
 <div class="pre-card pick">
     <div class="pre-body">
@@ -12,10 +12,54 @@
             outline. Questions and answer options are reshuffled on every attempt.
         </p>
 
+        @* ------------------------------------------------------ step 1: mode *@
+        <h3 class="pick-step">Step 1 &middot; How do you want to sit it?</h3>
+
+        <div class="mode-grid" role="radiogroup" aria-label="Delivery mode">
+            @foreach (var m in ExamModeInfo.All)
+            {
+                var mode = m;
+                var on = _mode == mode;
+                <button type="button" role="radio" aria-checked="@(on ? "true" : "false")"
+                        class="mode-tile @(on ? "selected" : "")"
+                        @onclick="() => _mode = mode">
+                    <span class="mode-head">
+                        <span class="mode-icon">
+                            <AppIcon Name="@(mode == ExamMode.Practice ? "bulb" : "timer")" Size="20" />
+                        </span>
+                        <span class="mode-titles">
+                            <span class="mode-name">@mode.Name() mode</span>
+                            <span class="mode-tag">@mode.Tagline()</span>
+                        </span>
+                        <span class="mode-check" aria-hidden="true">
+                            @if (on)
+                            {
+                                <AppIcon Name="check" Size="14" />
+                            }
+                        </span>
+                    </span>
+
+                    @* Spans rather than a list: a button may only contain phrasing content. *@
+                    <span class="mode-points">
+                        @foreach (var point in mode.Points())
+                        {
+                            <span class="mode-point">@point</span>
+                        }
+                    </span>
+                </button>
+            }
+        </div>
+
+        @* ------------------------------------------------------ step 2: form *@
+        <h3 class="pick-step">Step 2 &middot; Pick a form</h3>
+
         <ul class="pre-facts compact">
             <li>
-                <AppIcon Name="timer" Size="22" />
-                <span>Exam Time: <b>@ExamSession.DurationMinutes minutes</b></span>
+                <AppIcon Name="@(_mode == ExamMode.Practice ? "infinity" : "timer")" Size="22" />
+                <span>
+                    Exam Time:
+                    <b>@(_mode == ExamMode.Practice ? "No limit" : $"{ExamSession.DurationMinutes} minutes")</b>
+                </span>
             </li>
             <li>
                 <AppIcon Name="award" Size="22" />
@@ -34,10 +78,15 @@
             @foreach (var f in ExamCatalog.Forms)
             {
                 var form = f;
-                <button type="button" class="form-tile" @onclick="() => OnSelect.InvokeAsync(form)">
+                <button type="button" class="form-tile @(_mode == ExamMode.Practice ? "practice" : "")"
+                        @onclick="() => OnSelect.InvokeAsync(new ExamStart(form, _mode))">
                     <span class="form-no">@form.Number</span>
                     <span class="form-name">@form.Title</span>
-                    <span class="form-meta">@ExamCatalog.QuestionCount questions &middot; @ExamSession.DurationMinutes min</span>
+                    <span class="form-meta">
+                        @ExamCatalog.QuestionCount questions &middot;
+                        @(_mode == ExamMode.Practice ? "untimed" : $"{ExamSession.DurationMinutes} min")
+                    </span>
+                    <span class="form-mode">@_mode.Name()</span>
                 </button>
             }
         </div>
@@ -45,5 +94,7 @@
 </div>
 
 @code {
-    [Parameter] public EventCallback<ExamForm> OnSelect { get; set; }
+    [Parameter] public EventCallback<ExamStart> OnSelect { get; set; }
+
+    private ExamMode _mode = ExamMode.Practice;
 }

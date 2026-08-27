@@ -1,6 +1,7 @@
 @using MockExam.Fluent.Models
 
-<nav class="exam-rail @(Expanded ? "expanded" : "")" aria-label="Exam toolbar">
+<nav class="exam-rail @(Expanded ? "expanded" : "") @(Open ? "open" : "")"
+     aria-label="Exam toolbar">
 
     <div class="rail-head">
         @if (Expanded)
@@ -83,6 +84,9 @@
     [Parameter, EditorRequired] public ExamSession Session { get; set; } = default!;
     [Parameter] public bool Expanded { get; set; }
     [Parameter] public EventCallback<bool> ExpandedChanged { get; set; }
+
+    /// <summary>Phone only: whether the rail is slid in as a drawer.</summary>
+    [Parameter] public bool Open { get; set; }
     [Parameter] public string? Active { get; set; }
     [Parameter] public EventCallback<string> OnCommand { get; set; }
     [Parameter] public DesignThemeModes Mode { get; set; }

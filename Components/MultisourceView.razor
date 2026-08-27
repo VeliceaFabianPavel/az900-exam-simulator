@@ -17,13 +17,21 @@
             var value = Response.Map.GetValueOrDefault(s.Key);
             <tr>
                 <td>@s.Text</td>
+                @* The label wraps the input so the whole chip is a tap target, and its text
+                   is revealed on a phone where the table header is not shown. *@
                 <td class="narrow">
-                    <input type="radio" name="@s.Key" checked="@(value == Yes)"
-                           aria-label="@Item.YesLabel" @onchange="() => Set(s.Key, Yes)" />
+                    <label class="cell-choice @(value == Yes ? "on" : "")">
+                        <input type="radio" name="@s.Key" checked="@(value == Yes)"
+                               aria-label="@Item.YesLabel" @onchange="() => Set(s.Key, Yes)" />
+                        <span class="cell-label">@Item.YesLabel</span>
+                    </label>
                 </td>
                 <td class="narrow">
-                    <input type="radio" name="@s.Key" checked="@(value == No)"
-                           aria-label="@Item.NoLabel" @onchange="() => Set(s.Key, No)" />
+                    <label class="cell-choice @(value == No ? "on" : "")">
+                        <input type="radio" name="@s.Key" checked="@(value == No)"
+                               aria-label="@Item.NoLabel" @onchange="() => Set(s.Key, No)" />
+                        <span class="cell-label">@Item.NoLabel</span>
+                    </label>
                 </td>
             </tr>
         }

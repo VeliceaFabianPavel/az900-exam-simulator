@@ -16,7 +16,7 @@
             {
                 var field = f;
                 <div class="screen-field"
-                     style="left:@(field.X)%;top:@(field.Y)%;width:@(field.W)%">
+                     style="@Box(field)">
                     <label for="@field.Key">@field.Label</label>
                     <select id="@field.Key" class="screen-select"
                             value="@Response.Map.GetValueOrDefault(field.Key)"
@@ -68,6 +68,10 @@
 }
 
 @code {
+    // See HotAreaView: CSS percentages need an invariant decimal point.
+    private static string Box(ScreenField f) => FormattableString.Invariant(
+        $"left:{f.X}%;top:{f.Y}%;width:{f.W}%");
+
     [Parameter, EditorRequired] public ActiveScreenItem Item { get; set; } = default!;
     [Parameter, EditorRequired] public Response Response { get; set; } = default!;
     [Parameter] public EventCallback<Response> ResponseChanged { get; set; }

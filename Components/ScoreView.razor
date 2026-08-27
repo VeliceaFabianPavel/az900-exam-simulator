@@ -3,7 +3,10 @@
 
 <h1 style="margin-top:0">Score report</h1>
 
-<p class="score-form">@Session.Form.Title &middot; Exam AZ-900: Microsoft Azure Fundamentals</p>
+<p class="score-form">
+    @Session.Form.Title &middot; Exam AZ-900: Microsoft Azure Fundamentals
+    &middot; @Session.Mode.Name() mode
+</p>
 
 <div class="score-banner @(Session.Passed ? "pass" : "fail")">
     <div class="score-figure">
@@ -35,6 +38,17 @@
         <div class="val">@Elapsed</div>
         <div class="lbl">Time used</div>
     </div>
+    @if (Session.IsPractice)
+    {
+        <div class="score-tile">
+            <div class="val">@Session.HelpedCount</div>
+            <div class="lbl">Answers revealed</div>
+        </div>
+        <div class="score-tile">
+            <div class="val">@Session.HintedCount</div>
+            <div class="lbl">Hints taken</div>
+        </div>
+    }
 </div>
 
 <h2>Performance by skills area</h2>
@@ -61,6 +75,15 @@
         </div>
     }
 </div>
+
+@if (Session.IsPractice && Session.HelpedCount > 0)
+{
+    <FluentMessageBar Intent="MessageIntent.Warning" AllowDismiss="false">
+        You revealed the answer on @Session.HelpedCount of @Session.TotalQuestions questions,
+        so this score runs ahead of what you would get unaided. Those questions are flagged in
+        the answer review &mdash; sit the same form in Exam mode to see where you really stand.
+    </FluentMessageBar>
+}
 
 <FluentMessageBar Intent="MessageIntent.Info" AllowDismiss="false">
     This practice score is an approximation. The live exam uses a statistical

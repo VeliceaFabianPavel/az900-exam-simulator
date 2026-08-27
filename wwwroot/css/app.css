@@ -693,6 +693,68 @@ body {
     font-weight: 600;
 }
 
+/* Image-backed hot area -------------------------------------------------
+   The diagram supplies the labels, so the regions stay invisible until the
+   pointer or keyboard reaches them. */
+
+.screen-sim.shrink {
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.hotarea-image {
+    position: relative;
+    line-height: 0;
+    background-color: #fff;
+}
+
+.hotarea-image img {
+    display: block;
+    width: 480px;
+    max-width: 100%;
+    height: auto;
+}
+
+.hotspot.region {
+    background-color: transparent;
+    border: 2px dashed transparent;
+    border-radius: 6px;
+    padding: 0;
+    box-shadow: none;
+}
+
+.hotspot.region:hover {
+    border-color: var(--accent-fill-hover);
+    background-color: color-mix(in srgb, var(--accent-fill-rest) 12%, transparent);
+}
+
+.hotspot.region:focus-visible {
+    outline: 2px solid var(--accent-fill-rest);
+    outline-offset: 2px;
+}
+
+.hotspot.region.selected {
+    border-style: solid;
+    border-color: var(--accent-fill-rest);
+    background-color: color-mix(in srgb, var(--accent-fill-rest) 22%, transparent);
+    color: inherit;
+    box-shadow: none;
+}
+
+/* Concentric spots: the label sits in the band each ring keeps clear at its top,
+   so an outer ring stays readable and clickable around the ones nested inside it. */
+.hotarea.nested .hotspot {
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 10px 16px;
+    background-color: color-mix(in srgb, var(--neutral-layer-1) 88%, transparent);
+}
+
+.hotarea.nested .hotspot.selected {
+    background-color: color-mix(in srgb, var(--accent-fill-rest) 92%, transparent);
+}
+
 .hotspot:hover {
     border-color: var(--accent-fill-hover);
 }
@@ -1605,5 +1667,847 @@ body {
 
     .report-domain {
         margin-left: 0;
+    }
+}
+
+/* ------------------------------------------------------ delivery modes --- */
+
+.pick-step {
+    margin: 26px 0 12px;
+    font-size: var(--type-ramp-plus-1-font-size);
+    font-weight: 600;
+}
+
+.pick-step:first-of-type {
+    margin-top: 20px;
+}
+
+.mode-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin-bottom: 8px;
+}
+
+.mode-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 18px;
+    text-align: left;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    background-color: var(--neutral-layer-2);
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-radius: var(--layer-corner-radius, 8px);
+    cursor: pointer;
+    transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.mode-tile:hover {
+    background-color: var(--neutral-layer-1);
+    border-color: var(--accent-fill-rest);
+}
+
+.mode-tile:focus-visible {
+    outline: 2px solid var(--accent-fill-rest);
+    outline-offset: 2px;
+}
+
+.mode-tile.selected {
+    border-color: var(--accent-fill-rest);
+    box-shadow: inset 0 0 0 1px var(--accent-fill-rest);
+    background-color: var(--neutral-layer-1);
+}
+
+.mode-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mode-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background-color: var(--neutral-fill-secondary-rest);
+    color: var(--neutral-foreground-rest);
+}
+
+.mode-tile.selected .mode-icon {
+    background-color: var(--accent-fill-rest);
+    color: var(--foreground-on-accent-rest);
+}
+
+.mode-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.mode-name {
+    font-weight: 600;
+}
+
+.mode-tag {
+    color: var(--neutral-foreground-hint);
+    font-size: var(--type-ramp-minus-1-font-size);
+}
+
+.mode-check {
+    display: grid;
+    place-items: center;
+    margin-left: auto;
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.mode-tile.selected .mode-check {
+    background-color: var(--accent-fill-rest);
+    border-color: var(--accent-fill-rest);
+    color: var(--foreground-on-accent-rest);
+}
+
+.mode-points {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: var(--type-ramp-minus-1-font-size);
+    line-height: 1.4;
+    color: var(--neutral-foreground-hint);
+}
+
+.mode-point {
+    position: relative;
+    padding-left: 16px;
+}
+
+.mode-point::before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    top: 0.55em;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: var(--accent-fill-rest);
+}
+
+/* Mode carried onto the form tiles and the pre-exam summary ------------ */
+
+.form-mode {
+    grid-column: 2;
+    grid-row: 3;
+    justify-self: start;
+    margin-top: 8px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: var(--type-ramp-minus-2-font-size, 10px);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--neutral-foreground-hint);
+    background-color: var(--neutral-fill-secondary-rest);
+}
+
+.form-tile.practice .form-mode {
+    color: var(--foreground-on-accent-rest);
+    background-color: var(--accent-fill-rest);
+}
+
+.pre-mode {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 22px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    background-color: var(--neutral-layer-2);
+    font-size: var(--type-ramp-minus-1-font-size);
+}
+
+.pre-mode.practice {
+    border-color: var(--accent-fill-rest);
+    color: var(--accent-foreground-rest);
+}
+
+.mode-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    vertical-align: middle;
+    margin-left: 10px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background-color: var(--accent-fill-rest);
+    color: var(--foreground-on-accent-rest);
+    font-size: var(--type-ramp-minus-2-font-size, 10px);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+/* A count-up clock is informational, not a warning. --------------------- */
+
+.exam-clock.up {
+    color: var(--neutral-foreground-hint);
+    font-weight: 500;
+}
+
+/* --------------------------------------------- practice assistance --- */
+
+.assist {
+    margin-top: 22px;
+    padding: 14px 18px;
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-left-width: 4px;
+    border-radius: var(--layer-corner-radius, 8px);
+    background-color: var(--neutral-layer-2);
+}
+
+.assist.hint {
+    border-left-color: #c19c00;
+    background-color: rgba(255, 185, 0, 0.09);
+}
+
+.assist.help {
+    border-left-color: #0f6cbd;
+    background-color: rgba(15, 108, 189, 0.09);
+}
+
+.assist-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.assist.hint .assist-head {
+    color: #8a6f00;
+}
+
+.assist.help .assist-head {
+    color: #0f6cbd;
+}
+
+.assist-close {
+    display: grid;
+    place-items: center;
+    margin-left: auto;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: var(--control-corner-radius, 4px);
+    background: transparent;
+    color: var(--neutral-foreground-hint);
+    cursor: pointer;
+}
+
+.assist-close:hover {
+    background-color: var(--neutral-fill-stealth-hover);
+    color: var(--neutral-foreground-rest);
+}
+
+.assist-body {
+    color: var(--neutral-foreground-rest);
+}
+
+.assist-body > p:first-child {
+    margin-top: 0;
+}
+
+.assist-body > p:last-child {
+    margin-bottom: 0;
+}
+
+.assist-body h4 {
+    margin: 14px 0 6px;
+    font-size: var(--type-ramp-minus-1-font-size);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--neutral-foreground-hint);
+}
+
+.assist-body h4:first-child {
+    margin-top: 0;
+}
+
+.assist-key {
+    margin: 0;
+    padding-left: 20px;
+    font-weight: 600;
+}
+
+.assist-more {
+    margin: 10px 0 0;
+    font-size: var(--type-ramp-minus-1-font-size);
+    color: var(--neutral-foreground-hint);
+}
+
+.assist-ref {
+    margin-bottom: 0;
+    color: var(--neutral-foreground-hint);
+    font-size: var(--type-ramp-minus-1-font-size);
+}
+
+.report-assist {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--neutral-foreground-hint);
+    font-size: var(--type-ramp-minus-1-font-size);
+}
+
+@media (max-width: 900px) {
+    .exam-footer {
+        flex-wrap: wrap;
+    }
+
+    .mode-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==================================================================== *
+ *  Phone layout                                                        *
+ *                                                                      *
+ *  The desktop chrome is a fixed sidebar plus a wide three-column       *
+ *  header, neither of which survives a 390px viewport. Below 720px the  *
+ *  rail becomes an off-canvas drawer, the header collapses to a single  *
+ *  compact row, and the footer becomes a stacked action bar.            *
+ * ==================================================================== */
+
+/* Hidden at desktop widths, revealed by the phone block below. */
+.hdr-menu,
+.footer-more,
+.hdr-thin,
+.nav-scrim {
+    display: none;
+}
+
+.cell-choice {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.cell-label {
+    display: none;
+}
+
+/* Dynamic viewport units keep the shell correct while mobile browser
+   toolbars slide in and out. The vh line is the fallback. */
+.exam-shell,
+.pre-shell {
+    height: 100vh;
+    height: 100dvh;
+}
+
+@media (max-width: 720px) {
+
+    /* Shell: one column, the rail no longer occupies a track ---------- */
+
+    .exam-shell {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "header"
+            "main"
+            "footer";
+    }
+
+    /* Rail as a drawer ------------------------------------------------ */
+
+    .exam-rail {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: min(310px, 86vw);
+        align-items: stretch;
+        padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+        box-shadow: var(--elevation-shadow-flyout-rest);
+        transform: translateX(-102%);
+        transition: transform 220ms ease, visibility 220ms;
+        visibility: hidden;
+        z-index: 40;
+    }
+
+    .exam-rail.open {
+        transform: translateX(0);
+        visibility: visible;
+    }
+
+    /* The desktop collapsed and expanded widths do not apply to a drawer. */
+    .exam-rail.expanded {
+        width: min(310px, 86vw);
+    }
+
+    .nav-scrim {
+        display: block;
+        position: fixed;
+        inset: 0;
+        border: none;
+        padding: 0;
+        background-color: rgba(0, 0, 0, 0.45);
+        z-index: 39;
+        cursor: pointer;
+    }
+
+    /* Header: menu, question, clock, then a thin progress bar --------- */
+
+    .exam-header {
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px 0;
+        padding-top: calc(8px + env(safe-area-inset-top));
+        position: relative;
+    }
+
+    .hdr-menu {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        margin-left: -8px;
+        border: none;
+        border-radius: var(--control-corner-radius, 4px);
+        background: transparent;
+        color: var(--neutral-foreground-rest);
+        cursor: pointer;
+    }
+
+    .hdr-menu:hover {
+        background-color: var(--neutral-fill-stealth-hover);
+    }
+
+    .hdr-title .q-no {
+        font-size: var(--type-ramp-plus-1-font-size);
+        line-height: 1.25;
+    }
+
+    .hdr-title .q-sub {
+        display: none;
+    }
+
+    /* The middle progress block is far too wide; the thin bar replaces it. */
+    .exam-header > .hdr-block:not(.right) {
+        display: none;
+    }
+
+    .hdr-block.right {
+        align-items: flex-end;
+    }
+
+    /* Just the number: the legend and its switch cost more than they earn. */
+    .hdr-block.right .hdr-block-top {
+        display: none;
+    }
+
+    .exam-clock {
+        font-size: var(--type-ramp-plus-1-font-size);
+        letter-spacing: 0.04em;
+    }
+
+    .hdr-thin {
+        display: block;
+        grid-column: 1 / -1;
+        height: 3px;
+        margin: 8px -12px 0;
+        background-color: var(--neutral-fill-secondary-rest);
+    }
+
+    .hdr-thin > span {
+        display: block;
+        height: 100%;
+        background-color: var(--accent-fill-rest);
+        transition: width 200ms ease;
+    }
+
+    .mode-badge {
+        margin-left: 6px;
+    }
+
+    /* Main ------------------------------------------------------------ */
+
+    .exam-main {
+        padding: 12px 10px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .exam-card {
+        padding: 16px 14px 22px;
+    }
+
+    .exam-card h1 {
+        font-size: var(--type-ramp-plus-3-font-size);
+        line-height: 1.25;
+    }
+
+    /* Footer: stacked action bar -------------------------------------- */
+
+    .exam-footer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 10px 12px;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    }
+
+    .footer-secondary {
+        order: 1;
+        display: none;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px 16px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+    }
+
+    .exam-footer.more-open .footer-secondary {
+        display: flex;
+    }
+
+    .footer-assist {
+        order: 2;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .footer-primary {
+        order: 3;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Previous and Next share the width; the overflow button stays small.
+       Selector avoids depending on the element name FluentButton renders. */
+    .footer-primary > *:not(.spacer):not(.footer-more) {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .footer-primary .spacer {
+        display: none;
+    }
+
+    .footer-more {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 44px;
+        width: 44px;
+        height: 40px;
+        border: 1px solid var(--neutral-stroke-divider-rest);
+        border-radius: var(--control-corner-radius, 4px);
+        background: transparent;
+        color: var(--neutral-foreground-rest);
+        cursor: pointer;
+    }
+
+    /* Question widgets ------------------------------------------------ */
+
+    .choice {
+        padding: 13px 12px;
+        gap: 10px;
+    }
+
+    .choice input,
+    .answer-table input[type="radio"] {
+        width: 21px;
+        height: 21px;
+    }
+
+    .instruction {
+        font-size: var(--type-ramp-minus-1-font-size);
+    }
+
+    /* Transfer widgets stack, and the arrow column runs across. */
+    .transfer {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .transfer-mid {
+        flex-direction: row;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .transfer-box {
+        min-height: 0;
+    }
+
+    .chip {
+        padding: 12px;
+    }
+
+    .slot-drop {
+        min-height: 48px;
+    }
+
+    /* Tables become cards, since five columns will not fit ------------- */
+
+    .answer-table,
+    .answer-table tbody,
+    .answer-table tr,
+    .answer-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .answer-table {
+        border: none;
+        background: transparent;
+    }
+
+    .answer-table thead {
+        display: none;
+    }
+
+    .answer-table tr {
+        margin-bottom: 10px;
+        padding: 12px 14px;
+        border: 1px solid var(--neutral-stroke-divider-rest);
+        border-radius: var(--layer-corner-radius, 8px);
+        background-color: var(--neutral-layer-2);
+    }
+
+    .answer-table td {
+        padding: 0;
+        border: none;
+    }
+
+    .answer-table td.narrow {
+        display: inline-block;
+        width: auto;
+        margin: 10px 10px 0 0;
+    }
+
+    /* With the header hidden, each radio needs its own visible label. */
+    .cell-label {
+        display: inline;
+        font-weight: 600;
+    }
+
+    .cell-choice {
+        min-height: 44px;
+        padding: 6px 14px 6px 10px;
+        border: 1px solid var(--neutral-stroke-divider-rest);
+        border-radius: 999px;
+        background-color: var(--neutral-layer-1);
+    }
+
+    .cell-choice.on {
+        border-color: var(--accent-fill-rest);
+        box-shadow: inset 0 0 0 1px var(--accent-fill-rest);
+    }
+
+    .answer-select,
+    .screen-select {
+        width: 100%;
+        min-height: 44px;
+        margin-top: 10px;
+    }
+
+    /* Hot area -------------------------------------------------------- */
+
+    .hotarea-image img {
+        width: 100%;
+    }
+
+    .screen-sim.shrink {
+        width: auto;
+    }
+
+    .hotarea {
+        aspect-ratio: 4 / 3;
+    }
+
+    /* Assistance panels ----------------------------------------------- */
+
+    .assist {
+        padding: 12px 14px;
+        margin-top: 16px;
+    }
+
+    /* Pre-exam screens ------------------------------------------------ */
+
+    .pre-header {
+        padding: 12px 16px 6px;
+        padding-top: calc(12px + env(safe-area-inset-top));
+    }
+
+    .brand-logo img {
+        height: 44px;
+    }
+
+    .pre-main {
+        padding: 6px 12px;
+    }
+
+    .pre-card,
+    .pre-card.agreement,
+    .pre-card.summary,
+    .pre-card.ready {
+        grid-template-columns: 1fr;
+    }
+
+    .pre-body {
+        padding: 20px 16px 24px;
+    }
+
+    .pre-hero,
+    .pre-thumb {
+        display: none;
+    }
+
+    .pre-ttl {
+        font-size: var(--type-ramp-plus-4-font-size);
+        line-height: 1.2;
+    }
+
+    .pre-facts.compact {
+        gap: 8px 18px;
+    }
+
+    .pre-footer {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 12px 16px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    }
+
+    .pre-btn.wide {
+        width: 100%;
+        justify-content: center;
+        min-height: 48px;
+    }
+
+    .scheme-flyout {
+        left: 16px;
+        right: 16px;
+        min-width: 0;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .form-tile {
+        padding: 12px;
+        gap: 2px 10px;
+    }
+
+    .form-no {
+        width: 32px;
+        height: 32px;
+    }
+
+    .mode-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Score and review ------------------------------------------------ */
+
+    .score-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .score-banner {
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .score-value {
+        font-size: 38px;
+    }
+
+    .score-actions,
+    .review-toolbar {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .score-actions > * {
+        flex: 1 1 100%;
+    }
+
+    .report-answers {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .report-item {
+        padding: 14px;
+    }
+
+    .report-head {
+        gap: 8px;
+    }
+
+    /* Dialogs --------------------------------------------------------- */
+
+    fluent-dialog::part(control) {
+        width: calc(100vw - 24px);
+        max-width: calc(100vw - 24px);
+        max-height: 86dvh;
+        overflow: auto;
+    }
+}
+
+/* Very narrow phones --------------------------------------------------- */
+
+@media (max-width: 400px) {
+    .footer-assist {
+        grid-template-columns: 1fr;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .score-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Coarse pointers get larger targets regardless of viewport width ------- */
+
+@media (pointer: coarse) {
+    .choice,
+    .cell-choice,
+    .rail-item,
+    .rail-choice {
+        min-height: 44px;
+    }
+
+    .hotspot.region {
+        border-width: 3px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .exam-rail,
+    .hdr-thin > span,
+    .progress-track > span {
+        transition: none;
     }
 }
