@@ -2,6 +2,47 @@ using MockExam.Fluent.Models;
 
 namespace MockExam.Fluent.Services;
 
+/// <summary>How a form is delivered. Chosen on the picker screen, fixed for the attempt.</summary>
+public enum ExamMode
+{
+    /// <summary>Timed 45-minute delivery with no assistance. Mirrors the live exam.</summary>
+    Exam,
+
+    /// <summary>Untimed study delivery with a per-question hint and answer reveal.</summary>
+    Practice
+}
+
+public static class ExamModeInfo
+{
+    public static string Name(this ExamMode m) =>
+        m == ExamMode.Practice ? "Practice" : "Exam";
+
+    public static string Tagline(this ExamMode m) => m == ExamMode.Practice
+        ? "Untimed, with hints and answers"
+        : "Timed, exactly like the real thing";
+
+    private static readonly string[] PracticePoints =
+    [
+        "No time limit — the clock counts up so you can watch your pace",
+        "A hint on any question that narrows the field without naming the answer",
+        "Reveal the keyed answer and the full explanation whenever you want",
+        "Still fully scored, and the report shows where you leaned on help"
+    ];
+
+    private static readonly string[] ExamPoints =
+    [
+        $"{ExamSession.DurationMinutes} minutes on the clock, counting down",
+        "The exam ends by itself when the time runs out",
+        "No hints and no answers until you end the exam",
+        $"Scored against the {ExamSession.PassMark} of 1000 pass mark"
+    ];
+
+    public static string[] Points(this ExamMode m) =>
+        m == ExamMode.Practice ? PracticePoints : ExamPoints;
+
+    public static readonly ExamMode[] All = [ExamMode.Practice, ExamMode.Exam];
+}
+
 public enum ExamScreen
 {
     /// <summary>Choose which of the ten practice forms to sit.</summary>
@@ -59,10 +100,20 @@ public sealed class ExamSession
     public bool Started { get; private set; }
     public ExamForm Form { get; private set; } = ExamCatalog.Forms[0];
 
-    /// <summary>Loads a form and returns the session to its pre-exam state.</summary>
-    public void SelectForm(ExamForm form)
+    /// <summary>Delivery mode for the current attempt. Set by <see cref="SelectForm"/>.</summary>
+    public ExamMode Mode { get; private set; } = ExamMode.Exam;
+
+    /// <summary>True when hints, answer reveals and the count-up clock are available.</summary>
+    public bool IsPractice => Mode == ExamMode.Practice;
+
+    /// <summary>True when the attempt runs against a countdown that can expire.</summary>
+    public bool IsTimed => Mode == ExamMode.Exam;
+
+    /// <summary>Loads a form in the given mode and returns the session to its pre-exam state.</summary>
+    public void SelectForm(ExamForm form, ExamMode mode = ExamMode.Exam)
     {
         Form = form;
+        Mode = mode;
         _states.Clear();
         Pages.Clear();
         Index = 0;
@@ -156,6 +207,40 @@ public sealed class ExamSession
         s.Feedback = !s.Feedback;
         Changed?.Invoke();
     }
+
+    /// <summary>Practice mode: show or hide the hint for an item, remembering that it was used.</summary>
+    public void ToggleHint(string key)
+    {
+        if (!IsPractice)
+        {
+            return;
+        }
+
+        var s = State(key);
+        s.HintOpen = !s.HintOpen;
+        s.UsedHint |= s.HintOpen;
+        Changed?.Invoke();
+    }
+
+    /// <summary>Practice mode: reveal or hide the answer key and explanation for an item.</summary>
+    public void ToggleHelp(string key)
+    {
+        if (!IsPractice)
+        {
+            return;
+        }
+
+        var s = State(key);
+        s.HelpOpen = !s.HelpOpen;
+        s.UsedHelp |= s.HelpOpen;
+        Changed?.Invoke();
+    }
+
+    /// <summary>Questions whose answer was revealed during a practice attempt.</summary>
+    public int HelpedCount => ScoredPages.Count(p => State(p.Key).UsedHelp);
+
+    /// <summary>Questions whose hint was opened during a practice attempt.</summary>
+    public int HintedCount => ScoredPages.Count(p => State(p.Key).UsedHint);
 
     public bool CanGoPrevious => Screen == ExamScreen.Item && Index > 0;
 
@@ -255,11 +340,26 @@ public sealed class ExamSession
         }
     }
 
-    public TimeSpan Elapsed => (_endedAt ?? DateTimeOffset.UtcNow) - _startedAt;
+    /// <summary>Time on task. Zero until the first question is shown.</summary>
+    public TimeSpan Elapsed => Started
+        ? (_endedAt ?? DateTimeOffset.UtcNow) - _startedAt
+        : TimeSpan.Zero;
+
+    /// <summary>
+    /// What the clock shows: time left in Exam mode, time spent in Practice mode.
+    /// </summary>
+    public TimeSpan Clock => IsPractice ? Elapsed : Remaining;
+
+    /// <summary>Caption above the clock, matching whichever direction it runs.</summary>
+    public string ClockLegend => IsPractice ? "Time elapsed" : "Time remaining";
+
+    /// <summary>True when an Exam-mode countdown is close enough to warrant a warning.</summary>
+    public bool ClockIsLow => IsTimed && Started && !Ended && Remaining < TimeSpan.FromMinutes(5);
 
     public void Tick()
     {
-        if (Started && !Ended && Remaining == TimeSpan.Zero)
+        // Practice mode is untimed, so the clock runs up and nothing expires.
+        if (IsTimed && Started && !Ended && Remaining == TimeSpan.Zero)
         {
             EndExam();
             return;
@@ -283,7 +383,9 @@ public sealed class ExamSession
                 answered,
                 state.Marked,
                 p.Item.ResponseLines(state.Response),
-                p.Item.CorrectAnswerLines);
+                p.Item.CorrectAnswerLines,
+                state.UsedHint,
+                state.UsedHelp);
         })
     ];
 

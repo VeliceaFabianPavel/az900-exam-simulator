@@ -4,28 +4,62 @@
 
 <p class="instruction">Work area &mdash; select the correct area in the graphic.</p>
 
-<div class="screen-sim">
+<div class="screen-sim @(HasImage ? "shrink" : "")">
     <div class="screen-chrome">
         <span class="screen-dot"></span>
         <span class="screen-name">@Item.ScreenTitle</span>
     </div>
-    <div class="screen-body hotarea" role="group" aria-label="@Item.ImageAlt">
-        @foreach (var spot in Item.Spots)
-        {
-            var s = spot;
-            var selected = Response.Selected.Contains(s.Key);
-            <button type="button"
-                    class="hotspot @(selected ? "selected" : "")"
-                    style="left:@(s.X)%;top:@(s.Y)%;width:@(s.W)%;height:@(s.H)%"
-                    aria-pressed="@selected"
-                    @onclick="() => Select(s.Key)">
-                @s.Label
-            </button>
-        }
-    </div>
+
+    @if (HasImage)
+    {
+        @* Regions sit transparently over the diagram, so the graphic carries the meaning. *@
+        <div class="hotarea-image" role="group" aria-label="@Item.ImageAlt">
+            <img src="@Item.ImageSrc" alt="@Item.ImageAlt" />
+            @foreach (var spot in Item.Spots)
+            {
+                var s = spot;
+                var selected = Response.Selected.Contains(s.Key);
+                <button type="button"
+                        class="hotspot region @(selected ? "selected" : "")"
+                        style="@Box(s)"
+                        title="@s.Label"
+                        aria-label="@s.Label"
+                        aria-pressed="@(selected ? "true" : "false")"
+                        @onclick="() => Select(s.Key)">
+                </button>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="screen-body hotarea @(Item.Nested ? "nested" : "")"
+             role="group" aria-label="@Item.ImageAlt">
+            @foreach (var spot in Item.Spots)
+            {
+                var s = spot;
+                var selected = Response.Selected.Contains(s.Key);
+                <button type="button"
+                        class="hotspot @(selected ? "selected" : "")"
+                        style="@Box(s)"
+                        aria-pressed="@(selected ? "true" : "false")"
+                        @onclick="() => Select(s.Key)">
+                    @s.Label
+                </button>
+            }
+        </div>
+    }
 </div>
 
 @code {
+    // Percentages must be written with an invariant decimal point. Blazor WebAssembly
+    // takes CurrentCulture from the browser's language, so a comma-decimal locale would
+    // emit "width:21,25%", which the browser discards as an invalid declaration. The
+    // spot then falls back to width/left auto and the hotspots pile up on the left.
+    private static string Box(HotSpot s) => FormattableString.Invariant(
+        $"left:{s.X}%;top:{s.Y}%;width:{s.W}%;height:{s.H}%");
+
+    private bool HasImage => !string.IsNullOrWhiteSpace(Item.ImageSrc);
+
     [Parameter, EditorRequired] public HotAreaItem Item { get; set; } = default!;
     [Parameter, EditorRequired] public Response Response { get; set; } = default!;
     [Parameter] public EventCallback<Response> ResponseChanged { get; set; }

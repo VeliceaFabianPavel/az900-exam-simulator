@@ -5,6 +5,9 @@ namespace MockExam.Fluent.Services;
 /// <summary>One of the ten practice forms. The seed fixes which bank items the form draws.</summary>
 public sealed record ExamForm(int Number, string Title, string Focus, int Seed);
 
+/// <summary>What the picker screen hands back: a form plus the mode to deliver it in.</summary>
+public sealed record ExamStart(ExamForm Form, ExamMode Mode);
+
 /// <summary>
 /// Builds the ten practice forms from <see cref="QuestionBank"/>. Item selection is
 /// deterministic per form, so exam 3 always contains the same 50 questions, while the
@@ -85,6 +88,7 @@ public static class ExamCatalog
             Domain = bl.Domain,
             Objective = bl.Objective,
             Explanation = bl.Explanation,
+            Hint = bl.Hint,
             Reference = bl.Reference,
             SourceLabel = bl.SourceLabel,
             AnswerLabel = bl.AnswerLabel,
@@ -99,6 +103,7 @@ public static class ExamCatalog
             Domain = dd.Domain,
             Objective = dd.Objective,
             Explanation = dd.Explanation,
+            Hint = dd.Hint,
             Reference = dd.Reference,
             SourceLabel = dd.SourceLabel,
             TargetLabel = dd.TargetLabel,
@@ -127,6 +132,7 @@ public static class ExamCatalog
             Domain = mc.Domain,
             Objective = mc.Objective,
             Explanation = mc.Explanation,
+            Hint = mc.Hint,
             Reference = mc.Reference,
             Choices = [.. order.Select((c, i) => new Choice(keys[i].ToString(), c.Text))],
             Answer = [.. mc.Answer.Select(k => remap[k]).Order()],

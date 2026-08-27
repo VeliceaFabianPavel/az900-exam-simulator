@@ -18,12 +18,12 @@
             {
                 <div class="pre-time">
                     <div class="hdr-block-top">
-                        <span class="hdr-legend">Time remaining</span>
-                        <FluentSwitch @bind-Value="_showTime" aria-label="Show time remaining" />
+                        <span class="hdr-legend">@Session.ClockLegend</span>
+                        <FluentSwitch @bind-Value="_showTime" aria-label="Show the clock" />
                     </div>
                     @if (_showTime)
                     {
-                        <span class="exam-clock">@Clock</span>
+                        <span class="exam-clock @ClockClass">@Clock</span>
                     }
                 </div>
             }
@@ -32,7 +32,7 @@
         <main class="pre-main">
             @if (Session.Screen == ExamScreen.Pick)
             {
-                <ExamPicker OnSelect="Session.SelectForm" />
+                <ExamPicker OnSelect="StartExam" />
             }
             else if (Session.Screen == ExamScreen.Agreement)
             {
@@ -81,15 +81,39 @@ else
     <div class="exam-shell">
 
         <ExamToolbar Session="Session"
-                     @bind-Expanded="_railExpanded"
+                     Expanded="_railExpanded"
+                     ExpandedChanged="OnRailExpandedChanged"
+                     Open="_navOpen"
                      Active="@_overlay"
                      OnCommand="OnCommand"
                      Mode="@(Layout?.Mode ?? DesignThemeModes.System)"
                      ModeChanged="SetMode" />
 
+        @* Tap-anywhere-to-close backdrop. Present only while the phone drawer is open. *@
+        @if (_navOpen)
+        {
+            <button type="button" class="nav-scrim" aria-label="Close the exam toolbar"
+                    @onclick="() => _navOpen = false"></button>
+        }
+
         <header class="exam-header">
+            <button type="button" class="hdr-menu" aria-label="Open the exam toolbar"
+                    aria-expanded="@(_navOpen ? "true" : "false")"
+                    @onclick="() => _navOpen = !_navOpen">
+                <AppIcon Name="menu" Size="20" />
+            </button>
+
             <div class="hdr-title">
-                <span class="q-no">@HeaderTitle</span>
+                <span class="q-no">
+                    @HeaderTitle
+                    @if (Session.IsPractice)
+                    {
+                        <span class="mode-badge" title="Untimed practice with hints and answers">
+                            <AppIcon Name="bulb" Size="12" />
+                            <span>Practice</span>
+                        </span>
+                    }
+                </span>
                 <span class="q-sub">@HeaderSubtitle</span>
             </div>
 
@@ -116,13 +140,18 @@ else
 
             <div class="hdr-block right">
                 <div class="hdr-block-top">
-                    <span class="hdr-legend">Time remaining</span>
-                    <FluentSwitch @bind-Value="_showTime" aria-label="Show time remaining" />
+                    <span class="hdr-legend">@Session.ClockLegend</span>
+                    <FluentSwitch @bind-Value="_showTime" aria-label="Show the clock" />
                 </div>
                 @if (_showTime)
                 {
-                    <span class="exam-clock @(Session.Remaining < TimeSpan.FromMinutes(5) ? "low" : "")">@Clock</span>
+                    <span class="exam-clock @ClockClass">@Clock</span>
                 }
+            </div>
+
+            @* Phone-only: the progress groups above are too wide, so show one thin bar. *@
+            <div class="hdr-thin" aria-hidden="true">
+                <span style="@ThinProgress"></span>
             </div>
         </header>
 
@@ -145,42 +174,82 @@ else
                     <ItemBody Item="Session.Current.Item"
                               Response="Session.CurrentState.Response"
                               ResponseChanged="SaveResponse" />
+
+                    @if (Session.IsPractice && Session.Current.Item.Scored)
+                    {
+                        <AssistPanel Item="Session.Current.Item"
+                                     State="Session.CurrentState"
+                                     OnToggleHint="ToggleHint"
+                                     OnToggleHelp="ToggleHelp" />
+                    }
                 }
             </div>
         </main>
 
-        <footer class="exam-footer">
-            <FluentButton Appearance="Appearance.Neutral"
-                          Disabled="@(!Session.CanGoPrevious)"
-                          OnClick="Session.Previous">
-                <AppIcon Name="chevron-left" Size="16" />
-                <span style="margin-left:6px">Previous</span>
-            </FluentButton>
+        <footer class="exam-footer @(_moreOpen ? "more-open" : "")">
 
-            <FluentButton Appearance="Appearance.Accent"
-                          Disabled="@(Session.Screen is ExamScreen.Score or ExamScreen.Report)"
-                          OnClick="OnNext">
-                <span style="margin-right:6px">@NextLabel</span>
-                <AppIcon Name="chevron-right" Size="16" />
-            </FluentButton>
-
-            <span class="spacer"></span>
-
+            @* Order is set in CSS: one row on desktop, stacked rows on a phone. *@
             @if (Session.Screen == ExamScreen.Item && Session.Current.Item.Scored)
             {
-                <FluentButton Appearance="Appearance.Stealth"
-                              Disabled="@Session.CurrentState.Response.IsEmpty"
-                              OnClick="ResetAnswer">
-                    <AppIcon Name="reset" Size="16" />
-                    <span style="margin-left:6px">Reset answer</span>
+                <div class="footer-secondary">
+                    <FluentButton Appearance="Appearance.Stealth"
+                                  Disabled="@Session.CurrentState.Response.IsEmpty"
+                                  OnClick="ResetAnswer">
+                        <AppIcon Name="reset" Size="16" />
+                        <span style="margin-left:6px">Reset answer</span>
+                    </FluentButton>
+
+                    <FluentCheckbox Value="@Session.CurrentState.Marked"
+                                    ValueChanged="ToggleMark" Label="Review later" />
+
+                    <FluentCheckbox Value="@Session.CurrentState.Feedback"
+                                    ValueChanged="ToggleFeedback" Label="Leave feedback" />
+                </div>
+            }
+
+            @if (Session.IsPractice && Session.Screen == ExamScreen.Item && Session.Current.Item.Scored)
+            {
+                <div class="footer-assist">
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="ToggleHint">
+                        <AppIcon Name="bulb" Size="16" />
+                        <span style="margin-left:6px">@(Session.CurrentState.HintOpen ? "Hide hint" : "Hint")</span>
+                    </FluentButton>
+
+                    <FluentButton Appearance="Appearance.Neutral" OnClick="ToggleHelp">
+                        <AppIcon Name="@(Session.CurrentState.HelpOpen ? "eye-off" : "eye")" Size="16" />
+                        <span style="margin-left:6px">@(Session.CurrentState.HelpOpen ? "Hide answer" : "Show answer")</span>
+                    </FluentButton>
+                </div>
+            }
+
+            <div class="footer-primary">
+                <FluentButton Appearance="Appearance.Neutral"
+                              Disabled="@(!Session.CanGoPrevious)"
+                              OnClick="Session.Previous">
+                    <AppIcon Name="chevron-left" Size="16" />
+                    <span style="margin-left:6px">Previous</span>
                 </FluentButton>
 
-                <FluentCheckbox Value="@Session.CurrentState.Marked"
-                                ValueChanged="ToggleMark" Label="Review later" />
+                <FluentButton Appearance="Appearance.Accent"
+                              Disabled="@(Session.Screen is ExamScreen.Score or ExamScreen.Report)"
+                              OnClick="OnNext">
+                    <span style="margin-right:6px">@NextLabel</span>
+                    <AppIcon Name="chevron-right" Size="16" />
+                </FluentButton>
 
-                <FluentCheckbox Value="@Session.CurrentState.Feedback"
-                                ValueChanged="ToggleFeedback" Label="Leave feedback" />
-            }
+                <span class="spacer"></span>
+
+                @* Phone-only: reveals the secondary row, which is collapsed by default. *@
+                @if (Session.Screen == ExamScreen.Item && Session.Current.Item.Scored)
+                {
+                    <button type="button" class="footer-more"
+                            aria-label="More question options"
+                            aria-expanded="@(_moreOpen ? "true" : "false")"
+                            @onclick="() => _moreOpen = !_moreOpen">
+                        <AppIcon Name="@(_moreOpen ? "chevron-down" : "chevron-up")" Size="18" />
+                    </button>
+                }
+            </div>
         </footer>
     </div>
 }
@@ -213,6 +282,27 @@ else
         <p>Select <strong>Review later</strong> to flag a question, then open
            <strong>Exam Progress</strong> in the toolbar to track your position.</p>
         <p>You can change any answer at any time before you end the exam.</p>
+
+        @if (Session.IsPractice)
+        {
+            <p>
+                You are in <strong>Practice mode</strong>. There is no time limit and the
+                clock counts up, so nothing ends the attempt but you.
+            </p>
+            <p>
+                <strong>Hint</strong> gives you a nudge towards the idea a question turns on.
+                <strong>Show answer</strong> reveals the key and the full explanation. Both
+                are available on every question, and the score report notes where you used them.
+            </p>
+        }
+        else
+        {
+            <p>
+                You are in <strong>Exam mode</strong>. The clock counts down from
+                @ExamSession.DurationMinutes minutes and the exam ends by itself when it
+                reaches zero. Hints and answers are not available until you end the exam.
+            </p>
+        }
     </FluentDialogBody>
     <FluentDialogFooter>
         <FluentButton Appearance="Appearance.Accent" OnClick="CloseOverlay">Close</FluentButton>
@@ -220,14 +310,20 @@ else
 </FluentDialog>
 
 <FluentDialog Hidden="@(!_confirmEnd)" Modal="true">
-    <FluentDialogHeader>End the exam?</FluentDialogHeader>
+    <FluentDialogHeader>@(Session.IsPractice ? "Finish this practice set?" : "End the exam?")</FluentDialogHeader>
     <FluentDialogBody>
         <p>You have answered @Session.AnsweredCount of @Session.TotalQuestions questions.</p>
-        <p>You cannot return to the exam after it ends.</p>
+        @if (Session.IsPractice && Session.HelpedCount > 0)
+        {
+            <p>You revealed the answer on @Session.HelpedCount of them; those are still scored as you answered them.</p>
+        }
+        <p>You cannot return to the questions after this point.</p>
     </FluentDialogBody>
     <FluentDialogFooter>
         <FluentButton Appearance="Appearance.Neutral" OnClick="() => _confirmEnd = false">Cancel</FluentButton>
-        <FluentButton Appearance="Appearance.Accent" OnClick="ConfirmEnd">End exam</FluentButton>
+        <FluentButton Appearance="Appearance.Accent" OnClick="ConfirmEnd">
+            @(Session.IsPractice ? "Finish" : "End exam")
+        </FluentButton>
     </FluentDialogFooter>
 </FluentDialog>
 
@@ -243,6 +339,8 @@ else
 
 @code {
     private bool _railExpanded = true;
+    private bool _navOpen;        // phone drawer
+    private bool _moreOpen;       // phone secondary action row
     private bool _confirmEnd;
     private bool _declined;
     private bool _schemeOpen;
@@ -281,7 +379,35 @@ else
         _timer?.Dispose();
     }
 
-    private void OnCommand(string command) => _overlay = _overlay == command ? null : command;
+    private void OnCommand(string command)
+    {
+        _overlay = _overlay == command ? null : command;
+        _navOpen = false;   // a command opens a dialog, so get the drawer out of the way
+    }
+
+    /// <summary>
+    /// The rail's own collapse button serves both layouts: it narrows the sidebar on a
+    /// desktop and closes the drawer on a phone.
+    /// </summary>
+    private void OnRailExpandedChanged(bool expanded)
+    {
+        _railExpanded = expanded;
+        if (!expanded)
+        {
+            _navOpen = false;
+        }
+    }
+
+    /// <summary>Width of the thin phone progress bar, as answered over total.</summary>
+    private string ThinProgress
+    {
+        get
+        {
+            var total = Session.TotalQuestions;
+            var pct = total == 0 ? 0 : 100 * Session.AnsweredCount / total;
+            return FormattableString.Invariant($"width:{pct}%");
+        }
+    }
 
     private void CloseOverlay() => _overlay = null;
 
@@ -297,6 +423,8 @@ else
         _schemeOpen = false;
     }
 
+    private void StartExam(ExamStart start) => Session.SelectForm(start.Form, start.Mode);
+
     private Task SaveResponse(Response response)
     {
         Session.SetResponse(Session.Current.Key, response);
@@ -308,6 +436,10 @@ else
     private void ToggleMark(bool _) => Session.ToggleMark(Session.Current.Key);
 
     private void ToggleFeedback(bool _) => Session.ToggleFeedback(Session.Current.Key);
+
+    private void ToggleHint() => Session.ToggleHint(Session.Current.Key);
+
+    private void ToggleHelp() => Session.ToggleHelp(Session.Current.Key);
 
     private static string GroupLabel(ProgressGroup g) =>
         g.Stub ? g.Label : $"{g.Label} ({g.Answered}/{g.Total})";
@@ -333,17 +465,20 @@ else
     };
 
     private string NextLabel => Session.Screen == ExamScreen.Review
-        ? "End exam"
+        ? Session.IsPractice ? "Finish and score" : "End exam"
         : Session.Index >= Session.Pages.Count - 1 ? "Review" : "Next";
 
+    /// <summary>Counts down in Exam mode and up in Practice mode.</summary>
     private string Clock
     {
         get
         {
-            var r = Session.Remaining;
-            return $"{(int)r.TotalMinutes:00} : {r.Seconds:00}";
+            var t = Session.Clock;
+            return $"{(int)t.TotalMinutes:00} : {t.Seconds:00}";
         }
     }
+
+    private string ClockClass => Session.ClockIsLow ? "low" : Session.IsPractice ? "up" : "";
 
     private void OnNext()
     {

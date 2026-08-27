@@ -22,62 +22,83 @@ public static partial class QuestionBank
 
         yield return Mc("cm-001", D3, "Describe cost management in Azure", R7,
             """
-            Which type of network traffic is charged in Azure?
+            An architect places a web tier in West Europe and its database in North Europe, then is
+            surprised by a network line on the bill.
+
+            Which statement explains the charge?
             """,
             [
-                "Egress, which is data leaving an Azure data centre.",
-                "Ingress, which is data entering an Azure data centre.",
-                "Both ingress and egress are charged at the same rate.",
-                "Neither ingress nor egress is charged."
+                "Egress, data leaving an Azure data centre, is charged, while ingress is free, so the constant cross-region replies from the database are billed.",
+                "Ingress, data entering an Azure data centre, is charged, so the queries sent to the database are billed.",
+                "Both directions are charged at the same rate, so the total is simply the sum of the traffic.",
+                "Neither direction is charged within the same geography, so the line must be an error."
             ], "A",
             """
-            Data moving into an Azure data centre, known as ingress, is not charged. Data leaving,
-            known as egress, is charged, and it is one of the main network cost considerations in
-            a solution design.
+            Data entering an Azure data centre is free; data leaving is charged. That asymmetry is
+            the single most useful fact about Azure network pricing, and it is why a chatty
+            application split across regions costs more than the same application in one region.
 
-            This is why placing tightly coupled resources in the same region matters: it avoids
-            generating chargeable egress between them.
+            Here the queries into North Europe cost nothing and every response leaving it is
+            billed. Keeping tightly coupled resources in the same region avoids generating the
+            chargeable direction at all.
+            """,
+            """
+            Only one direction of traffic is charged. Work out which, then which half of this
+            conversation travels in it.
             """);
 
         yield return Mc("cm-002", D3, "Describe cost management in Azure", R7,
             """
-            Which two factors affect the cost of an Azure resource? Each correct answer presents a
-            complete solution.
+            Which two factors directly change the amount charged for an Azure resource? Each correct
+            answer presents a complete solution.
             """,
             [
-                "The region in which the resource is deployed.",
-                "The service tier or performance tier selected for the resource.",
-                "The name given to the resource.",
+                "The region the resource is deployed to.",
+                "The service or performance tier selected for the resource.",
+                "The tags applied to the resource.",
                 "The resource group the resource is placed in.",
-                "The tags applied to the resource."
+                "The name given to the resource."
             ], "A,B",
             """
-            Prices vary between regions for the same service, and the tier chosen, whether that is
-            a performance tier, a service tier or a storage access tier, changes the rate charged.
+            Prices for the same service vary between regions, and the tier chosen, whether a
+            performance tier, a service tier or a storage access tier, changes the rate charged.
+            Both are real design levers.
 
-            Names, resource group membership and tags are organisational metadata. Tags are useful
-            for reporting and chargeback but do not themselves change what a resource costs.
+            Tags are the distractor worth being precise about. They are central to cost management
+            because they let you attribute and report spending, but attributing a cost is not the
+            same as changing it: a tagged and an untagged virtual machine cost exactly the same.
+            Names and resource group membership are metadata too.
+            """,
+            """
+            One distractor is genuinely important to cost management without affecting the amount
+            charged. Note the word "directly" in the question.
             """);
 
         yield return Mc("cm-003", D3, "Describe cost management in Azure", R7,
             """
-            You stop and deallocate an Azure virtual machine that you will not need for a month.
+            A virtual machine is not needed for a month. An administrator shuts it down from inside
+            the guest operating system and expects the compute charges to stop.
 
-            Which statement describes the billing effect?
+            What actually happens, and what should have been done?
             """,
             [
-                "Compute charges stop, but you continue to pay for the attached disk storage.",
-                "All charges stop, including storage.",
-                "Compute charges continue because the virtual machine still exists.",
-                "You are charged a fixed monthly fee for the deallocated virtual machine."
+                "Compute charges continue, because shutting down in the guest does not release the allocation; the machine must be deallocated, after which disk charges still apply.",
+                "Compute charges stop, because any shutdown releases the compute allocation, and disk charges also stop.",
+                "Compute charges stop, and disk charges continue, because a guest shutdown and a deallocation are equivalent.",
+                "All charges stop immediately, because Azure bills only for running processes."
             ], "A",
             """
-            Deallocating a virtual machine releases the compute resources, so compute charges stop.
-            The managed disks that hold the operating system and data still exist, so storage
-            charges continue.
+            Shutting down inside the guest leaves the virtual machine in a stopped state with its
+            compute capacity still allocated, and Azure keeps billing for it. Deallocating, from
+            the portal, CLI or PowerShell, releases the capacity and ends the compute charge.
 
-            To remove all charges the virtual machine and its associated resources have to be
-            deleted, which also destroys the data.
+            Even then the managed disks holding the operating system and data still exist and are
+            still billed, so a deallocated machine is cheap rather than free. Removing every charge
+            means deleting the machine and its disks, which destroys the data.
+            """,
+            """
+            Two words for stopping a machine mean different things to the billing system. Which one
+            did the administrator actually do?
             """);
 
         yield return YesNo("cm-004", D3, "Describe cost management in Azure", R7,
@@ -87,48 +108,62 @@ public static partial class QuestionBank
             """,
             [
                 ("Deploying the same virtual machine size in a different region can change its price.", true),
-                ("Data transferred into an Azure region is charged at the same rate as data transferred out.", false),
-                ("Deleting a virtual machine stops the charges for its managed disks.", false)
+                ("Data transferred into an Azure region is charged at the same rate as data out of it.", false),
+                ("Deleting a virtual machine automatically stops the charges for its managed disks.", false),
+                ("A deallocated virtual machine still incurs charges for its public IP address if one is reserved.", true)
             ],
             """
-            Regional pricing differences are real and can be significant, so region choice is a
-            legitimate cost lever.
+            Regional price differences are real and often significant, so region choice is a
+            legitimate cost lever. Inbound traffic is free while outbound is charged, so the second
+            statement is false.
 
-            Inbound traffic is free while outbound traffic is charged. Deleting a virtual machine
-            does not automatically delete its disks, network interface or public IP address, so
-            those resources keep incurring charges until they are removed separately.
+            The last two are the same lesson twice: the virtual machine is not the only billable
+            thing you created. Deleting it does not remove its disks, network interface or public
+            IP, and a reserved static IP is billed whether or not anything is attached to it. This
+            is the classic source of a bill that will not go down.
+            """,
+            """
+            Two statements are about what survives after you stop or delete a virtual machine. List
+            what else was created alongside it.
             """);
 
         // ---------------------------------------------------------- calculators
 
         yield return Mc("cm-005", D3, "Describe cost management in Azure", R7,
             """
-            You need to estimate the monthly cost of a proposed solution consisting of specific
-            virtual machines, a database and a storage account, before you deploy anything.
+            A team must produce a monthly cost estimate for a proposed solution of specific virtual
+            machines, a database and a storage account. Nothing has been deployed and the team has
+            no Azure subscription yet.
 
-            Which tool should you use?
+            Which tool should it use?
             """,
             [
                 "The Azure Pricing Calculator.",
-                "The Total Cost of Ownership Calculator.",
                 "Microsoft Cost Management.",
+                "The Total Cost of Ownership Calculator.",
                 "Azure Advisor."
             ], "A",
             """
-            The Azure Pricing Calculator estimates what a specific set of Azure resources will cost.
-            You select the products, specify parameters such as region, tier and instance count,
-            and the estimate updates as you go. No subscription is required to use it.
+            The Azure Pricing Calculator prices a specific proposed configuration: you pick the
+            products, set region, tier and instance count, and the estimate updates as you go. It
+            needs no subscription, which is the detail the last sentence of the stem is testing.
 
-            The other tools either compare on-premises costs to Azure or analyse spending that has
-            already occurred.
+            Cost Management and Advisor both analyse resources that already exist, so neither can
+            help before deployment, and the TCO Calculator compares an existing on-premises estate
+            with Azure rather than pricing a new design.
+            """,
+            """
+            Two of these tools require something to already be running. The final sentence rules
+            them out.
             """);
 
         yield return Mc("cm-006", D3, "Describe cost management in Azure", R7,
             """
-            Your organisation wants to compare the cost of continuing to run its existing
-            on-premises data centre against the cost of migrating those workloads to Azure.
+            A finance director asks for a comparison between continuing to run the existing
+            on-premises data centre and migrating those workloads to Azure, including the costs of
+            hardware, power and staff.
 
-            Which tool is designed for this comparison?
+            Which tool is designed for that comparison?
             """,
             [
                 "The Total Cost of Ownership Calculator.",
@@ -137,12 +172,18 @@ public static partial class QuestionBank
                 "Azure Monitor."
             ], "A",
             """
-            The Total Cost of Ownership Calculator estimates the savings from moving existing
-            on-premises workloads to Azure by comparing the full cost of ownership in both places.
-            Its capabilities are now delivered through Azure Migrate.
+            The Total Cost of Ownership Calculator models the full cost of ownership in both
+            places, which is what makes it the right answer: it accounts for the on-premises side,
+            including hardware, power, facilities and labour, not just the Azure side. Its
+            capabilities are now delivered through Azure Migrate.
 
-            The Pricing Calculator prices a proposed Azure configuration but does not model the
-            on-premises side of the comparison.
+            The Pricing Calculator prices an Azure configuration and knows nothing about the
+            existing data centre, so it can produce one half of the comparison but never the
+            comparison itself.
+            """,
+            """
+            Both calculators can price the Azure side. Only one of them can price what the company
+            is running today.
             """);
 
         yield return Dropdowns("cm-007", D3, "Describe cost management in Azure", R7,
@@ -153,142 +194,190 @@ public static partial class QuestionBank
             [
                 ("To estimate the cost of a specific set of Azure resources before deployment, use",
                     ["the Pricing Calculator", "the TCO Calculator", "Microsoft Cost Management", "Azure Advisor"], 1),
-                ("To compare on-premises costs against the cost of running the same workloads in Azure, use",
+                ("To compare on-premises costs against running the same workloads in Azure, use",
                     ["the Pricing Calculator", "the TCO Calculator", "Microsoft Cost Management", "Azure Monitor"], 2),
-                ("To set a budget and receive an alert when spending crosses a threshold, use",
-                    ["the Pricing Calculator", "the TCO Calculator", "Microsoft Cost Management", "Azure Policy"], 3)
+                ("To set a budget and be alerted when spending crosses a threshold, use",
+                    ["the Pricing Calculator", "the TCO Calculator", "Microsoft Cost Management", "Azure Policy"], 3),
+                ("To be told that an existing virtual machine is oversized and could be resized, use",
+                    ["the Pricing Calculator", "the TCO Calculator", "Microsoft Cost Management", "Azure Advisor"], 4)
             ],
             """
-            The Pricing Calculator prices a planned Azure configuration, and the Total Cost of
-            Ownership Calculator compares on-premises ownership costs with Azure.
+            The two calculators work before anything is deployed: the Pricing Calculator prices a
+            planned Azure configuration, and the TCO Calculator compares on-premises ownership with
+            Azure.
 
-            Once resources are running, Microsoft Cost Management is the tool that analyses actual
-            spending and supports budgets, thresholds and alerts.
+            The last two rows work afterwards and are easy to blur. Cost Management reports what you
+            spent and enforces budgets and alerts; Azure Advisor inspects how resources are actually
+            used and recommends specific changes such as right-sizing an underused virtual machine.
+            One tells you the number, the other tells you what to do about it.
+            """,
+            """
+            Split the four rows into before deployment and after. Then, within each pair, ask which
+            tool reports and which one recommends.
             """);
 
         yield return Mc("cm-008", D3, "Describe cost management in Azure", R7,
             """
-            Which tool should you use to analyse spending that has already occurred, create
-            budgets, and receive alerts when a subscription approaches a spending threshold?
+            A team must analyse last quarter actual spending by department, forecast next month,
+            and email a recurring report to finance.
+
+            Which tool should it use?
             """,
             [
                 "Microsoft Cost Management.",
                 "The Azure Pricing Calculator.",
-                "Azure Policy.",
+                "Azure Advisor.",
                 "Azure Service Health."
             ], "A",
             """
             Microsoft Cost Management brings together cost analysis, budgets, threshold alerts,
-            forecasting, scheduled reports and exports for actual consumption.
+            forecasting, scheduled reports and exports, all against actual consumption. Every
+            requirement in the stem is one of its features.
 
-            The Pricing Calculator produces estimates before deployment, Azure Policy governs
-            resource configuration, and Service Health reports on the health of Azure services.
+            The Pricing Calculator produces estimates before deployment and has no view of what you
+            actually spent. Advisor recommends changes rather than reporting spend, and Service
+            Health reports on the health of Azure services.
+            """,
+            """
+            The stem lists three requirements. Look for the one tool that covers all of them rather
+            than the one that covers the first.
             """);
 
         yield return Mc("cm-009", D3, "Describe cost management in Azure", R7,
             """
-            You create a budget in Microsoft Cost Management and set an alert threshold.
+            A team creates a budget in Microsoft Cost Management with an alert at 90 percent and
+            assumes this will prevent overspending.
 
-            What happens when spending exceeds that threshold?
+            What actually happens when spending crosses the threshold, and what would enforce a
+            limit?
             """,
             [
-                "A notification is sent, but resources continue to run.",
-                "All resources in the subscription are shut down immediately.",
-                "New resource creation is blocked automatically.",
-                "The subscription is cancelled."
+                "A notification is sent and resources keep running; enforcement requires separate action, such as an automation triggered by the alert or policies that restrict what can be deployed.",
+                "All resources in the subscription are shut down immediately, so no further action is needed.",
+                "New resource creation is blocked automatically until the next billing period.",
+                "The subscription is cancelled and must be reactivated by an administrator."
             ], "A",
             """
-            A budget in Microsoft Cost Management is a monitoring and notification construct. When
-            spending crosses a configured threshold it raises an alert so that someone can act, but
-            it does not stop resources by itself.
+            A budget in Cost Management is a monitoring and notification construct. Crossing a
+            threshold raises an alert and can trigger an action group; it never stops a resource, so
+            the team assumption is exactly the misconception being tested.
 
-            Automatically shutting off consumption is the behaviour of a spending limit on a
-            credit-based subscription, which is a different mechanism.
+            Actually constraining spend needs something else: automation invoked by the alert, or
+            Azure Policy restricting which SKUs and regions may be deployed in the first place.
+            """,
+            """
+            Ask whether a budget is a control or a warning. The second half of the answer follows
+            from that.
             """);
 
         yield return Mc("cm-010", D3, "Describe cost management in Azure", R7,
             """
-            To which type of subscription is an Azure spending limit automatically applied?
+            A student subscription stops working part-way through the month and every resource
+            becomes unavailable, although no budget alert was configured.
+
+            What is the most likely cause?
             """,
             [
-                "Free trial and other credit-based subscriptions.",
-                "Enterprise Agreement subscriptions.",
-                "All pay-as-you-go subscriptions.",
-                "Cloud Solution Provider subscriptions."
+                "The spending limit that is applied automatically to credit-based subscriptions was reached, disabling the subscription until the next billing period.",
+                "A budget in Microsoft Cost Management reached 100 percent and shut the resources down.",
+                "A subscription quota was reached, which disables existing resources.",
+                "The Azure Hybrid Benefit expired, which suspends the subscription."
             ], "A",
             """
-            Spending limits are applied automatically to free trial and credit-based subscriptions.
-            When the limit is reached the subscription is disabled until the next billing period,
-            which prevents unexpected charges.
+            Spending limits are applied automatically to free trial and other credit-based
+            subscriptions. When the credit is exhausted the subscription is disabled until the next
+            billing period, which is what prevents an unexpected bill.
 
-            The limit can be removed on credit-based subscriptions, and converting a free trial to
-            pay-as-you-go also removes it.
+            The contrast with a budget is the point. A budget only notifies and never disables
+            anything, so the absence of an alert is consistent with a spending limit rather than
+            evidence against it. A quota limits how many resources you may create, not whether
+            existing ones run. The limit can be removed, and converting to pay-as-you-go removes it.
+            """,
+            """
+            Something stopped the resources, and budgets never do that. Ask which mechanism actually
+            has the power to disable a subscription.
             """);
 
         // ---------------------------------------------------------- saving money
 
         yield return Mc("cm-011", D3, "Describe cost management in Azure", R7,
             """
-            Your company runs a set of virtual machines continuously and expects to keep running
-            them for at least three years.
+            A company runs a fixed set of virtual machines continuously and expects to keep running
+            them for at least three years. It also owns Windows Server licences with Software
+            Assurance.
 
-            Which option provides the greatest cost reduction?
+            Which two options should it combine? Each correct answer presents part of the solution.
             """,
             [
-                "Purchase Azure Reservations for a three-year term.",
-                "Move the virtual machines to spot pricing.",
-                "Deallocate the virtual machines overnight.",
-                "Move the virtual machines to a different resource group."
-            ], "A",
+                "Azure Reservations for a three-year term.",
+                "Azure Hybrid Benefit for the Windows Server licences.",
+                "Spot virtual machines, to use spare capacity.",
+                "Deallocating the virtual machines overnight.",
+                "Moving the virtual machines to a different resource group."
+            ], "A,B",
             """
-            Azure Reservations trade a one-year or three-year commitment for a large discount, and
-            the longer commitment produces the deeper saving. For steady, predictable workloads
-            that run continuously this is the strongest lever available.
+            The two levers stack because they discount different things. A three-year reservation
+            discounts the compute for a steady, predictable workload, and Azure Hybrid Benefit
+            removes the Windows licence component by applying licences the company already owns.
 
-            Spot pricing is inappropriate for workloads that must run continuously because spot
-            instances can be evicted, and moving a resource between groups changes nothing about
-            its cost.
+            Spot pricing is wrong for anything that must run continuously, since instances can be
+            evicted. Deallocating overnight contradicts the stated requirement, and a resource group
+            move changes nothing about cost.
+            """,
+            """
+            The scenario gives two separate facts about the company. Each one unlocks a different
+            discount, and they apply to different parts of the bill.
             """);
 
         yield return Mc("cm-012", D3, "Describe cost management in Azure", R7,
             """
-            Which term lengths are available for Azure Reservations?
+            Which statement about Azure Reservation terms is correct?
             """,
             [
-                "One year or three years.",
-                "One month or twelve months.",
-                "Two years or five years.",
-                "Six months or eighteen months."
+                "Terms are one year or three years, the three-year term carries the larger discount, and pricing reverts to pay-as-you-go at the end unless a new reservation is bought.",
+                "Terms are one year or three years, and a reservation renews automatically at the end of the term.",
+                "Terms are one month or twelve months, chosen when the resource is created.",
+                "Terms are two years or five years, and the discount is identical for both."
             ], "A",
             """
-            Azure Reservations are purchased for a one-year or three-year term, and the three-year
-            commitment carries the larger discount, which can reach roughly 70 percent or more
-            depending on the resource.
+            Reservations are purchased for one or three years, and the longer commitment carries
+            the deeper discount, which can reach roughly 70 percent or more depending on the
+            resource.
 
-            Reservations do not renew automatically. When the term ends, pricing reverts to
-            pay-as-you-go unless a new reservation is purchased.
+            The expiry behaviour is the part that catches organisations out. Nothing renews by
+            itself, so a reservation that lapses quietly returns the workload to pay-as-you-go
+            rates and the bill rises without anything having changed in the environment.
+            """,
+            """
+            Two options give the right term lengths. What separates them is what happens on the day
+            the term ends.
             """);
 
         yield return Mc("cm-013", D3, "Describe cost management in Azure", R7,
             """
-            Your company owns Windows Server and SQL Server licences that are covered by Software
-            Assurance, and it plans to run those workloads on Azure virtual machines.
+            A company owns Windows Server and SQL Server licences covered by Software Assurance and
+            plans to run those workloads on Azure virtual machines.
 
-            Which option lets the company reduce cost by reusing those licences?
+            Which option reuses those licences, and what does it leave the company paying for?
             """,
             [
-                "Azure Hybrid Benefit.",
-                "Azure Reservations.",
-                "Azure spot virtual machines.",
-                "Azure dev/test pricing."
+                "Azure Hybrid Benefit, which leaves the company paying for the underlying compute and storage but not for the licence again.",
+                "Azure Hybrid Benefit, which makes the virtual machines free while the licences remain valid.",
+                "Azure Reservations, which include the Windows Server licence in the committed price.",
+                "Azure dev/test pricing, which is the only way to reuse an owned licence."
             ], "A",
             """
-            Azure Hybrid Benefit lets an organisation apply existing Windows Server and SQL Server
-            licences covered by Software Assurance to Azure workloads, so it pays only for the
-            underlying compute rather than for the licence again.
+            Azure Hybrid Benefit applies existing Windows Server and SQL Server licences covered by
+            Software Assurance to Azure workloads, so the licence portion of the rate disappears.
 
-            Reservations, spot pricing and dev/test pricing all reduce cost in other ways but none
-            of them makes use of licences the customer already owns.
+            What remains is the infrastructure: the compute, storage and networking are still
+            billed as usual, which is why the benefit reduces the bill rather than eliminating it.
+            Reservations and dev/test pricing are separate discounts that do not draw on licences
+            you already own, though a reservation can be combined with the benefit.
+            """,
+            """
+            The mechanism is easy to name. The harder half is what is left on the invoice once the
+            licence component is removed.
             """);
 
         yield return Mc("cm-014", D3, "Describe cost management in Azure", R7,
@@ -296,31 +385,49 @@ public static partial class QuestionBank
             Which workload is the most appropriate candidate for Azure spot virtual machines?
             """,
             [
-                "A batch processing job that can be interrupted and restarted later.",
-                "A customer-facing web application with an availability commitment.",
+                "A nightly video encoding job that checkpoints its progress and can resume after an interruption.",
+                "A customer-facing web application covered by an availability commitment.",
                 "A production database that must be continuously available.",
                 "A domain controller that authenticates users."
             ], "A",
             """
-            Spot virtual machines use spare capacity at a large discount, but they can be evicted
-            with only about thirty seconds of notice and carry no availability commitment. Work
-            that can be interrupted and resumed, such as batch processing, is the ideal fit.
+            Spot virtual machines run on spare capacity at a large discount and can be evicted with
+            roughly thirty seconds of notice, carrying no availability commitment. The right
+            workload is one where an interruption costs time rather than service.
 
-            Anything that must stay available, including customer-facing applications, production
-            databases and domain controllers, should not run on spot capacity.
+            The encoding job qualifies precisely because it checkpoints: eviction means resuming
+            rather than starting over. Anything that must stay reachable, whether a web application,
+            a database or a domain controller, is a poor fit.
+            """,
+            """
+            The deciding property is not that the job runs at night or in batches. It is what
+            happens to its progress when the machine disappears mid-run.
             """);
 
         yield return Mc("cm-015", D3, "Describe cost management in Azure", R7,
             """
-            How much notice does Azure give before evicting a spot virtual machine?
-            """,
-            ["About 30 seconds.", "About 5 minutes.", "About 1 hour.", "About 24 hours."], "A",
-            """
-            Azure gives roughly thirty seconds of notice before evicting a spot virtual machine,
-            which is why spot workloads must be able to checkpoint or simply restart.
+            A spot virtual machine is evicted.
 
-            The eviction policy determines what happens next: the instance is either deallocated,
-            in which case storage charges continue, or deleted outright.
+            How much notice does Azure give, and what determines whether storage charges continue?
+            """,
+            [
+                "About 30 seconds, and the eviction policy decides: deallocate keeps the disks and their charges, while delete removes the instance outright.",
+                "About 30 seconds, and storage charges always stop, because eviction deletes the instance.",
+                "About 5 minutes, and storage charges always continue, because the disks are always retained.",
+                "About 24 hours, which is enough time to migrate the workload to standard pricing."
+            ], "A",
+            """
+            Azure gives roughly thirty seconds of notice, which is why a spot workload has to be
+            able to checkpoint or simply restart. Anything needing a longer graceful shutdown does
+            not belong on spot capacity.
+
+            What happens afterwards is a choice you make in advance. The eviction policy is either
+            deallocate, which keeps the disks and therefore keeps billing for them but allows a
+            restart later, or delete, which removes the instance and its charges entirely.
+            """,
+            """
+            The notice period is one fact. The second half depends on a setting you configure when
+            creating the machine, not on Azure.
             """);
 
         yield return Drag("cm-016", D3, "Describe cost management in Azure", R7,
@@ -339,116 +446,155 @@ public static partial class QuestionBank
                 ("Commit to steady compute usage for three years in exchange for a discount", 1),
                 ("Reuse existing Software Assurance licences for Windows Server in Azure", 2),
                 ("Run an interruptible batch job on spare capacity at a deep discount", 3),
-                ("Reduce the size of virtual machines that are consistently underutilised", 4)
+                ("Reduce the size of virtual machines that are consistently underutilised", 4),
+                ("Cut the bill without changing the workload, its size, or its running hours", 2)
             ],
             """
-            Reservations reward a term commitment on predictable usage, and Azure Hybrid Benefit
-            reuses licences the organisation already owns.
+            Reservations reward a term commitment on predictable usage, spot pricing suits
+            interruptible work on spare capacity, and right-sizing removes waste by matching
+            instance size to actual consumption.
 
-            Spot pricing suits interruptible work on spare capacity, and right-sizing eliminates
-            waste by matching instance size to actual consumption.
+            The last row is the elimination exercise. Reservations require a commitment, spot
+            requires accepting eviction and right-sizing changes the machine, so the only option
+            that leaves the workload completely untouched is applying licences you already own.
+            """,
+            """
+            The final row rules out three options by what they each require you to change. Whatever
+            survives is the answer.
             """);
 
         yield return Mc("cm-017", D3, "Describe cost management in Azure", R7,
             """
-            Which practice helps you attribute Azure costs to the department that consumed the
-            resources?
+            Finance wants Azure costs attributed to the department that consumed them. Resources
+            already exist across many resource groups.
+
+            Which approach works, and what should be added to keep it working?
             """,
             [
-                "Apply tags to resources and review costs by tag in Microsoft Cost Management.",
-                "Place all resources in a single resource group.",
-                "Apply a resource lock to each resource.",
-                "Assign the Reader role to each department."
+                "Tag resources with a cost centre and group by tag in Microsoft Cost Management, adding an Azure Policy to require or append the tag on new resources.",
+                "Tag resources with a cost centre, which is sufficient on its own because Azure applies the tag to future resources automatically.",
+                "Move every department resources into one resource group per department, which is the only supported attribution method.",
+                "Assign the Reader role to each department, so that Cost Management reports by role assignment."
             ], "A",
             """
-            Tags are name and value pairs applied to resources, and Microsoft Cost Management can
-            group and filter spending by tag. That makes tagging the standard mechanism for
-            chargeback and showback.
+            Tags are name and value pairs on resources, and Microsoft Cost Management can group and
+            filter spending by tag, which makes tagging the standard mechanism for chargeback and
+            showback.
 
-            Locks protect resources from change, and role assignments control access; neither
-            provides cost attribution.
+            The second half is what stops the scheme decaying. Tags are not inherited and nothing
+            applies them automatically, so an untagged resource silently falls out of the report;
+            Azure Policy can require a tag at creation or append one. Resource groups are a valid
+            secondary grouping but not the only method, and role assignments have nothing to do with
+            cost reporting.
+            """,
+            """
+            The mechanism is easy to name. Ask what happens next month when somebody deploys a
+            resource and forgets.
             """);
 
         yield return Mc("cm-018", D3, "Describe cost management in Azure", R7,
             """
-            A company runs SQL Server on Azure virtual machines and wants to reduce both cost and
-            administrative effort.
+            A company runs SQL Server on Azure virtual machines that are busy only during business
+            hours, and wants to reduce both cost and administrative effort.
 
-            Which change would most directly achieve this?
+            Which change most directly achieves both?
             """,
             [
                 "Migrate the databases to Azure SQL Database or Azure SQL Managed Instance.",
-                "Increase the size of the virtual machines.",
-                "Move the virtual machines to a different resource group.",
-                "Apply a ReadOnly lock to the virtual machines."
+                "Increase the size of the virtual machines so that fewer are needed.",
+                "Apply a ReadOnly lock to the virtual machines outside business hours.",
+                "Move the virtual machines into a dedicated resource group for reporting."
             ], "A",
             """
-            Moving from an infrastructure as a service deployment to a managed platform service
-            removes operating system patching and server maintenance, and shifts billing to
-            consumption of the database service rather than a continuously running virtual machine.
+            Moving from infrastructure as a service to a managed platform service addresses both
+            halves at once: Microsoft takes over operating system patching and server maintenance,
+            and billing shifts to the database service, which can scale with the workload instead of
+            a virtual machine running flat out around the clock.
 
-            Enlarging the virtual machines would increase cost, and neither resource group
-            membership nor locks affect cost or administrative burden.
+            Enlarging the machines increases cost, a lock prevents changes rather than stopping
+            charges, and a resource group move changes nothing at all.
+            """,
+            """
+            The question asks for one change that improves two things. Check each option against
+            both cost and effort rather than either alone.
             """);
 
         // ---------------------------------------------------------- SLAs
 
         yield return Mc("cm-019", D3, "Describe Azure service level agreements", R7,
             """
-            A solution chains together services with availability commitments of 99.9 percent and
-            99.99 percent.
+            An architect proposes adding a fourth dependent service to a solution, arguing that
+            more services means more redundancy and therefore a higher composite commitment.
 
-            How is the composite availability of the solution calculated?
+            Which statement is correct?
             """,
             [
-                "By multiplying the individual commitments together.",
-                "By averaging the individual commitments.",
-                "By taking the highest individual commitment.",
-                "By adding the individual commitments and dividing by 100."
+                "Composite availability is the product of the individual commitments, so each additional dependency lowers it rather than raising it.",
+                "The architect is right, because chained commitments are averaged and a high fourth service raises the average.",
+                "Composite availability equals the highest individual commitment, so a strong fourth service raises the total.",
+                "Composite availability equals the lowest individual commitment and is unaffected by adding services."
             ], "A",
             """
             When services are chained so that the failure of any one makes the solution unavailable,
-            their commitments multiply. Multiplying values below one always produces a smaller
-            result, so a composite commitment is always lower than the weakest single component.
+            their commitments multiply. Multiplying values below one always yields a smaller result,
+            so the composite figure is lower than the weakest single component and falls further
+            with every dependency added.
 
-            This is why adding more dependent components reduces the overall commitment rather than
-            improving it.
+            The architect has confused dependency with redundancy. Redundant components are
+            alternatives to each other and do improve availability; dependent components each add a
+            way for the solution to fail.
+            """,
+            """
+            Ask whether the fourth service is an alternative to the others or something the
+            solution now needs. That distinction reverses the answer.
             """);
 
         yield return Mc("cm-020", D3, "Describe Azure service level agreements", R7,
             """
-            A solution depends on two services, one with a 99.9 percent commitment and one with a
-            99.99 percent commitment. Both must be available for the solution to work.
+            A solution depends on two services, one committed at 99.9 percent and one at 99.99
+            percent. Both must be available for the solution to work.
 
             What is the approximate composite availability?
             """,
-            ["99.89 percent.", "99.99 percent.", "99.945 percent.", "100 percent."], "A",
+            ["99.89 percent.", "99.99 percent.", "99.945 percent.", "99.9 percent."], "A",
             """
-            Multiplying the two commitments gives 0.999 multiplied by 0.9999, which is
-            approximately 0.9989, or about 99.89 percent.
+            Multiply the two: 0.999 times 0.9999 is approximately 0.9989, or about 99.89 percent.
 
-            The result is lower than either individual commitment, which illustrates the general
-            rule that each additional dependency reduces the composite figure.
+            Every distractor here is a plausible wrong method, which is why they are worth
+            recognising. Taking the higher commitment gives 99.99, averaging gives 99.945, and
+            taking the weakest link gives 99.9. All three are above the true answer, because
+            multiplication is the only method that produces a result worse than every input.
+            """,
+            """
+            The correct answer must be smaller than both inputs. That alone eliminates most of the
+            options before any arithmetic.
             """);
 
         yield return Mc("cm-021", D3, "Describe Azure service level agreements", R7,
             """
-            Which change would increase the availability commitment for a virtual machine workload?
+            A single virtual machine with Premium SSD disks runs a workload that must qualify for a
+            higher availability commitment.
+
+            Which change achieves that?
             """,
             [
                 "Deploy two or more instances across two or more availability zones.",
-                "Add more virtual machines to the same availability zone as the existing instance.",
-                "Move the virtual machines to a cheaper region.",
-                "Apply a CanNotDelete lock to the virtual machines."
+                "Add a second virtual machine in the same availability zone as the first.",
+                "Upgrade the disks from Premium SSD to a larger Premium SSD size.",
+                "Apply a CanNotDelete lock to the virtual machine."
             ], "A",
             """
-            Spreading two or more instances across two or more availability zones raises the virtual
-            machine commitment to 99.99 percent, because the instances no longer share power,
-            cooling or networking.
+            Two or more instances spread across two or more availability zones reaches 99.99
+            percent, because the instances no longer share power, cooling or networking. A single
+            instance on Premium SSD sits at 99.9 percent.
 
-            Adding dependent instances without separating them does not raise the commitment,
-            region choice affects price rather than availability, and locks protect against
-            accidental change rather than outage.
+            Adding a second instance in the same zone gains nothing from the zone perspective, disk
+            size does not change the commitment once the disk type is already Premium, and a lock
+            protects against accidental deletion rather than outage.
+            """,
+            """
+            The current deployment is already at the top of the single-instance ladder. Look for
+            the change that moves it onto a different ladder entirely.
             """);
 
         yield return YesNo("cm-022", D3, "Describe Azure service level agreements", R7,
@@ -459,86 +605,128 @@ public static partial class QuestionBank
             [
                 ("Services in preview are generally not covered by a service level agreement.", true),
                 ("Free Azure products generally have no service level agreement.", true),
-                ("Microsoft automatically issues a service credit when an agreement is missed.", false)
+                ("Microsoft automatically issues a service credit when a commitment is missed.", false),
+                ("A service credit refunds the business losses caused by the outage.", false)
             ],
             """
             Preview services and free products are generally excluded from availability
-            commitments, which is a key reason not to run production workloads on them.
+            commitments, which is the main reason not to run production workloads on them.
 
-            Service credits are not issued automatically. The customer must submit a billing claim,
-            or work through their partner, to request one.
+            The last two statements are about what a credit actually is. Nothing is issued
+            automatically: the customer submits a claim, or works through their partner. And the
+            remedy is a percentage credit against the service charges, not compensation for lost
+            business, which is the difference between an SLA and an insurance policy.
+            """,
+            """
+            The last two statements both concern the remedy. Ask who initiates it and what it is
+            calculated from.
             """);
 
         yield return Mc("cm-023", D3, "Describe Azure service level agreements", R7,
             """
-            Under a 99.9 percent availability commitment, approximately how much downtime is
-            permitted per year?
-            """,
-            ["About 8.76 hours.", "About 52.56 minutes.", "About 43.2 minutes.", "About 4.38 hours."], "A",
-            """
-            A 99.9 percent commitment permits roughly 8.76 hours of downtime across a year, which
-            corresponds to about 43.2 minutes in a 30-day month.
+            A team is told a workload needs no more than one hour of downtime per year.
 
-            A 99.99 percent commitment reduces the annual figure to roughly 52.56 minutes, an order
-            of magnitude improvement.
+            Which commitment level is the minimum that satisfies this?
+            """,
+            [
+                "99.99 percent, which permits about 52.56 minutes per year.",
+                "99.9 percent, which permits about 52.56 minutes per year.",
+                "99.9 percent, which permits about 8.76 hours per year.",
+                "99 percent, which permits about 3.65 days per year."
+            ], "A",
+            """
+            A 99.9 percent commitment permits roughly 8.76 hours of downtime per year, which is far
+            more than one hour, so it does not qualify. Adding a nine divides the allowance by ten:
+            99.99 percent permits about 52.56 minutes, which fits inside the requirement.
+
+            Option C states the 99.9 percent figure correctly but does not meet the requirement, and
+            option B attaches the wrong figure to it, so reading the number and the percentage
+            together is the whole task.
+            """,
+            """
+            Two options quote 99.9 percent with different downtime figures. Fix the correct figure
+            first, then check it against the requirement.
             """);
 
         yield return Mc("cm-024", D3, "Describe Azure service level agreements", R7,
             """
-            An Azure service is reachable but responding much more slowly than normal.
+            An Azure service is reachable throughout an incident but responds far more slowly than
+            normal. A manager wants to file a service credit claim.
 
-            Does this constitute a breach of the availability commitment?
+            Which statement is correct?
             """,
             [
-                "No, because availability commitments measure whether the service is available, not how fast it responds.",
-                "Yes, because any degradation counts as downtime.",
-                "Yes, but only if the slowdown lasts more than one hour.",
-                "No, because Azure services never breach their commitments."
+                "An availability commitment measures whether the service can be reached and used, so slow but successful responses are not downtime and would not support a claim.",
+                "Any measurable degradation counts as downtime, so the claim is straightforward.",
+                "The claim succeeds only if the slowdown lasted more than one hour, which is the threshold in Azure agreements.",
+                "No claim is ever possible, because Azure services do not breach their commitments."
             ], "A",
             """
-            An availability commitment measures whether the service can be reached and used.
-            Degraded performance, while undesirable, does not count as downtime, so it does not by
-            itself trigger a claim.
+            Availability commitments are about reachability. A service answering every request,
+            however slowly, is available, and performance targets are published separately as
+            service-specific latency measures.
 
-            To fail the commitment the service generally has to be completely unavailable.
+            The manager is not wrong to be unhappy, but the remedy is not a claim under an
+            availability commitment. There is no general one-hour degradation threshold, and Azure
+            services certainly can breach their commitments, which is why the credit process exists
+            at all.
+            """,
+            """
+            Decide what word the percentage is attached to. Then ask whether a slow answer breaks
+            that word.
             """);
 
         // ---------------------------------------------------------- lifecycle
 
         yield return Mc("cm-025", D3, "Describe Azure service level agreements", R7,
             """
-            Which statement about Azure services in public preview is correct?
+            A team wants to build a production workload on a feature currently in public preview,
+            arguing that public availability implies readiness.
+
+            Which statement is correct?
             """,
             [
-                "They are available to all Azure customers but are not covered by a service level agreement.",
-                "They are available only to invited customers and are covered by a service level agreement.",
-                "They are fully supported and guaranteed to reach general availability.",
-                "They are available only to customers with an Enterprise Agreement."
+                "Public preview is open to all customers but carries no availability commitment, may fall outside standard support, and is not guaranteed to reach general availability.",
+                "Public preview features are fully supported and guaranteed to reach general availability, so the plan is sound.",
+                "Public preview is available only to invited customers, so the team cannot use it anyway.",
+                "Public preview features are covered by the same service level agreements as generally available ones."
             ], "A",
             """
-            A public preview is open to all Azure customers so that new functionality can be
-            evaluated, but preview services carry no availability commitment, may not be covered by
-            standard support, and are not guaranteed to reach general availability.
+            A public preview is open to any Azure customer so new functionality can be evaluated,
+            which is exactly what makes it feel ready. Openness is not readiness: preview services
+            carry no availability commitment, may sit outside standard support, and can change
+            substantially or be withdrawn without reaching general availability.
 
-            A private preview, by contrast, is limited to invited organisations.
+            A private preview is the stage limited to invited organisations.
+            """,
+            """
+            The team has inferred one property from another. Ask whether being available to
+            everyone says anything about what is promised.
             """);
 
         yield return Mc("cm-026", D3, "Describe Azure service level agreements", R7,
             """
-            What is the difference between a private preview and a public preview?
+            What is the difference between a private preview and a public preview, and what do they
+            have in common?
             """,
             [
-                "A private preview is available only to invited customers, whereas a public preview is available to all Azure customers.",
-                "A private preview is covered by a service level agreement, whereas a public preview is not.",
-                "A private preview runs in a dedicated region, whereas a public preview runs everywhere.",
-                "A private preview is free, whereas a public preview is charged."
+                "A private preview is limited to invited customers and a public preview is open to all; neither carries an availability commitment.",
+                "A private preview is limited to invited customers and a public preview is open to all; only the public preview carries an availability commitment.",
+                "A private preview runs in a dedicated region and a public preview runs everywhere; both carry availability commitments.",
+                "A private preview is free and a public preview is charged; neither carries an availability commitment."
             ], "A",
             """
-            The distinction is who can access the feature. A private preview is offered to a
-            selected set of organisations by invitation, while a public preview is open to any
-            Azure customer who chooses to try it.
+            The difference is purely who can get in: private previews go to a selected set of
+            organisations by invitation, public previews to any customer who chooses to try the
+            feature.
 
-            Neither preview stage carries an availability commitment.
+            What they share matters more for a design decision. Neither stage carries an
+            availability commitment, so moving from private to public preview changes the audience
+            without changing what is promised.
+            """,
+            """
+            Two options state the access difference correctly. The tie is broken by what the two
+            stages have in common.
             """);
 
         yield return Dropdowns("cm-027", D3, "Describe Azure service level agreements", R7,
@@ -549,41 +737,63 @@ public static partial class QuestionBank
             [
                 ("A feature available only to invited organisations is in",
                     ["private preview", "public preview", "general availability", "retirement"], 1),
-                ("A feature open to all customers but not covered by an availability commitment is in",
+                ("A feature open to all customers but with no availability commitment is in",
                     ["private preview", "public preview", "general availability", "retirement"], 2),
                 ("A feature covered by published service level agreements and support terms is in",
+                    ["private preview", "public preview", "general availability", "retirement"], 3),
+                ("The earliest stage at which a production workload should normally depend on a feature is",
                     ["private preview", "public preview", "general availability", "retirement"], 3)
             ],
             """
             Azure services progress from private preview, restricted to invited organisations, to
-            public preview, open to everyone but without availability commitments.
+            public preview, open to everyone but without availability commitments, to general
+            availability, where published service level agreements, online service terms and
+            standard support all apply.
 
-            General availability is the point at which published service level agreements, online
-            service terms and standard support all apply.
+            The last row draws the practical conclusion. Because neither preview stage promises
+            anything, general availability is the first point at which a production workload should
+            take a dependency.
+            """,
+            """
+            The first three rows are definitions and the fourth asks you to act on them. Which stage
+            is the first to promise anything?
             """);
 
         yield return Mc("cm-028", D3, "Describe cost management in Azure", R7,
             """
-            Which statement about Azure subscription quotas is correct?
+            A deployment fails because the subscription has reached its limit for virtual machine
+            cores in a region.
+
+            Which statement about this limit is correct, and how does it differ from a spending
+            limit?
             """,
             [
-                "They are default limits that can often be increased up to a hard maximum by opening a support request.",
-                "They are fixed limits that can never be changed.",
-                "They automatically increase when spending increases.",
-                "They apply only to storage accounts."
+                "It is a quota: a default limit that can often be raised by support request up to a hard maximum, and it caps how many resources you may create rather than how much you may spend.",
+                "It is a quota, and quotas are fixed values that can never be changed.",
+                "It is a spending limit, and it will lift automatically at the start of the next billing period.",
+                "It is a quota, and it increases automatically as the subscription spend increases."
             ], "A",
             """
             Quotas, also called subscription limits, start at a default value and can often be
-            raised through a support request, up to a hard maximum that cannot be exceeded.
+            raised through a support request, up to a hard maximum that cannot be exceeded. Nothing
+            about them adjusts automatically with spend.
 
-            They are distinct from spending limits, which cap consumption cost rather than the
-            number of resources that can be created.
+            The contrast with a spending limit is the useful part. A quota caps how many resources
+            you may create; a spending limit caps consumption cost and disables a credit-based
+            subscription when the credit runs out. They fail in different ways and are fixed
+            differently.
+            """,
+            """
+            Two similar-sounding limits exist. One counts resources and one counts money; only one
+            of them is raised by asking.
             """);
 
         yield return Mc("cm-029", D3, "Describe cost management in Azure", R7,
             """
-            Which purchasing option involves a partner who manages the subscription, billing and
-            support on the customer's behalf?
+            A small company wants a single organisation to manage its Azure subscription, invoice it
+            directly and provide its first line of support.
+
+            Which purchasing option fits?
             """,
             [
                 "A Cloud Solution Provider agreement.",
@@ -592,12 +802,17 @@ public static partial class QuestionBank
                 "A free trial subscription."
             ], "A",
             """
-            Under a Cloud Solution Provider arrangement, a Microsoft partner owns the customer
-            relationship: it manages the subscription, invoices the customer and provides the first
-            line of support.
+            Under a Cloud Solution Provider arrangement a Microsoft partner owns the customer
+            relationship: it manages the subscription, issues the invoice and provides first-line
+            support, which matches all three requirements in the stem.
 
-            An Enterprise Agreement is a direct volume agreement with Microsoft, and web direct
-            purchases are managed by the customer.
+            An Enterprise Agreement is a direct volume agreement with Microsoft and is aimed at
+            large organisations with committed spend, and a web direct purchase leaves the customer
+            managing everything itself.
+            """,
+            """
+            The stem lists three responsibilities. Ask which option moves all three to a third
+            party rather than just one.
             """);
 
         yield return Mc("cm-030", D3, "Describe cost management in Azure", R7,
@@ -606,19 +821,24 @@ public static partial class QuestionBank
             presents a complete solution.
             """,
             [
-                "It includes a credit that can be used during the first 30 days.",
-                "It includes a set of services that remain free for 12 months.",
+                "It includes a credit that must be used during the first 30 days.",
+                "It includes a set of popular services that remain free for 12 months.",
                 "It never requires a payment method to be registered.",
-                "It automatically converts to a pay-as-you-go subscription after 30 days.",
-                "It provides unlimited use of every Azure service."
+                "It converts to a pay-as-you-go subscription automatically after 30 days.",
+                "It provides unlimited use of every Azure service for 12 months."
             ], "A,B",
             """
-            The free account combines a credit that must be used within the first thirty days with
-            a set of popular services that remain free for twelve months, plus some services that
-            are always free.
+            The free account combines a credit usable within the first thirty days, a set of popular
+            services free for twelve months, and a further set that is always free within monthly
+            limits.
 
-            A payment method is required at sign-up even though it is not charged, the account does
-            not convert automatically, and free usage is capped rather than unlimited.
+            The three distractors are the practical details people get wrong. A payment method is
+            required at sign-up even though it is not charged, the account does not convert by
+            itself, and the free usage is capped per service rather than unlimited.
+            """,
+            """
+            Two of these are about the offer itself and three are about how it behaves at sign-up
+            and expiry. The second group contains no correct answers.
             """);
     }
 }

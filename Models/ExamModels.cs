@@ -81,6 +81,18 @@ public abstract class Item
     /// <summary>Why the keyed answer is right, shown after the exam ends.</summary>
     public string Explanation { get; init; } = "";
 
+    /// <summary>
+    /// A nudge shown by the Practice-mode hint button. It points at the idea the item
+    /// turns on without naming the keyed option, so it narrows the field rather than
+    /// answering the question.
+    /// </summary>
+    public string Hint { get; init; } = "";
+
+    /// <summary>Hint text, falling back to the skills-outline bullet when none is authored.</summary>
+    public string HintText => string.IsNullOrWhiteSpace(Hint)
+        ? $"Think about what the skills outline expects here: {Objective}."
+        : Hint;
+
     /// <summary>Where the supporting material lives in the study guide.</summary>
     public string Reference { get; init; } = "";
 
@@ -226,6 +238,20 @@ public sealed class HotAreaItem : Item
     public string ScreenTitle { get; init; } = "Work area";
     public IReadOnlyList<HotSpot> Spots { get; init; } = [];
 
+    /// <summary>
+    /// Path to the diagram the spots are drawn over, relative to wwwroot. When set, the spots
+    /// render as transparent regions on top of the image rather than as labelled boxes, which
+    /// is how the live exam presents a hot area.
+    /// </summary>
+    public string ImageSrc { get; init; } = "";
+
+    /// <summary>
+    /// True when the spots are drawn as concentric rectangles. The containment shown in the
+    /// graphic then carries information the option labels do not, which is what separates a
+    /// hot area from a multiple choice item wearing boxes.
+    /// </summary>
+    public bool Nested { get; init; }
+
     /// <summary>Key of the single correct hotspot.</summary>
     public string Answer { get; init; } = "";
 
@@ -301,6 +327,18 @@ public sealed class ItemState
     public Response Response { get; set; } = new();
     public bool Marked { get; set; }
     public bool Feedback { get; set; }
+
+    /// <summary>Practice mode: the hint panel is currently open for this item.</summary>
+    public bool HintOpen { get; set; }
+
+    /// <summary>Practice mode: the answer key and explanation are currently revealed.</summary>
+    public bool HelpOpen { get; set; }
+
+    /// <summary>Practice mode: the hint was opened at least once, even if closed again.</summary>
+    public bool UsedHint { get; set; }
+
+    /// <summary>Practice mode: the answer was revealed at least once, even if hidden again.</summary>
+    public bool UsedHelp { get; set; }
 }
 
 /// <summary>One navigable screen in the assembled form.</summary>
@@ -320,4 +358,10 @@ public sealed record ItemResult(
     bool Answered,
     bool Marked,
     IReadOnlyList<string> Given,
-    IReadOnlyList<string> Expected);
+    IReadOnlyList<string> Expected,
+    bool UsedHint = false,
+    bool UsedHelp = false)
+{
+    /// <summary>True when the candidate leaned on Practice-mode assistance for this item.</summary>
+    public bool Assisted => UsedHint || UsedHelp;
+}

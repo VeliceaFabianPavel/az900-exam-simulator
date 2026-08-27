@@ -3,9 +3,18 @@
 <h1 style="margin-top:0">Review your answers</h1>
 
 <p>
-    Select a question to return to it. Questions you flagged for review are
-    marked. When you are finished, select <strong>End exam</strong>.
+    Select a question to return to it. Questions you flagged for review are marked.
+    When you are finished, select
+    <strong>@(Session.IsPractice ? "Finish and score" : "End exam")</strong>.
 </p>
+
+@if (Session.IsPractice && Session.HelpedCount > 0)
+{
+    <FluentMessageBar Intent="MessageIntent.Info" AllowDismiss="false">
+        You revealed the answer on @Session.HelpedCount of these questions. They are still
+        scored as you answered them, and the report flags them so you can come back.
+    </FluentMessageBar>
+}
 
 <div class="review-toolbar">
     <FluentSelect TOption="string" Label="Show" Items="@Filters"

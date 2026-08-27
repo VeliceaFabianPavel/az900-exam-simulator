@@ -4,7 +4,14 @@
 <div class="pre-card @(Ready ? "ready" : "summary")">
     <div class="pre-body">
         <h1 class="pre-ttl">@(Ready ? "Ready to start the exam?" : "Exam Summary")</h1>
-        <h2 class="pre-sub">Exam AZ-900: Microsoft Azure Fundamentals &mdash; @Session.Form.Title</h2>
+        <h2 class="pre-sub">
+            Exam AZ-900: Microsoft Azure Fundamentals &mdash; @Session.Form.Title
+        </h2>
+
+        <p class="pre-mode @(Session.IsPractice ? "practice" : "timed")">
+            <AppIcon Name="@(Session.IsPractice ? "bulb" : "timer")" Size="16" />
+            <span><b>@Session.Mode.Name() mode</b> &middot; @Session.Mode.Tagline()</span>
+        </p>
 
         @if (Ready)
         {
@@ -19,7 +26,7 @@
         }
 
         <ul class="pre-facts">
-            @if (!Ready)
+            @if (!Ready && Session.IsTimed)
             {
                 <li>
                     <AppIcon Name="clock" Size="22" />
@@ -30,8 +37,16 @@
                 </li>
             }
             <li>
-                <AppIcon Name="timer" Size="22" />
-                <span>Exam Time: <b>@ExamSession.DurationMinutes minutes</b></span>
+                <AppIcon Name="@(Session.IsPractice ? "infinity" : "timer")" Size="22" />
+                <span>
+                    Exam Time:
+                    <b>@(Session.IsPractice ? "No limit" : $"{ExamSession.DurationMinutes} minutes")</b>
+                    @if (Session.IsPractice)
+                    {
+                        <br />
+                        <span class="pre-note">(The clock counts up so you can watch your pace)</span>
+                    }
+                </span>
             </li>
             <li>
                 <AppIcon Name="list" Size="22" />
@@ -58,8 +73,20 @@
             <h3 class="pre-note-ttl">Note:</h3>
             <p>You can move backward and forward through the questions, flag any question
                for review, and change your answers at any time before the exam ends.</p>
-            <p>After the exam ends you will receive a score report and a full answer
-               review with an explanation for every question.</p>
+
+            @if (Session.IsPractice)
+            {
+                <p>Nothing is on a clock. Every question carries a <b>Hint</b> that points at the
+                   idea it turns on, and a <b>Show answer</b> button that reveals the key and the
+                   full explanation whenever you want them.</p>
+                <p>The set is still scored, and the report marks the questions where you took a
+                   hint or revealed the answer so you know which ones to come back to.</p>
+            }
+            else
+            {
+                <p>After the exam ends you will receive a score report and a full answer
+                   review with an explanation for every question.</p>
+            }
         }
     </div>
 
