@@ -319,6 +319,16 @@ public sealed class Response
         Ordered = [.. Ordered],
         Map = new Dictionary<string, string>(Map)
     };
+
+    /// <summary>
+    /// Content comparison. The item views always clone before editing, so reference equality
+    /// would report every save as a change.
+    /// </summary>
+    public bool SameAs(Response other) =>
+        Selected.SetEquals(other.Selected)
+        && Ordered.SequenceEqual(other.Ordered)
+        && Map.Count == other.Map.Count
+        && Map.All(kv => other.Map.TryGetValue(kv.Key, out var v) && v == kv.Value);
 }
 
 /// <summary>Per-page candidate state tracked by the delivery engine.</summary>

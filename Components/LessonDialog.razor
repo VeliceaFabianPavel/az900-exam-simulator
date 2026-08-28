@@ -1,0 +1,96 @@
+@using MockExam.Fluent.Models
+@* The training lesson behind a question, with the relevant points highlighted.
+
+   Header, body and footer are rendered unconditionally. FluentDialog registers each of them
+   once, in OnInitialized, so putting them behind an @if makes a second header initialise
+   against the same dialog the next time it opens, which throws. Only the content inside them
+   is conditional. *@
+
+<FluentDialog Hidden="@(Lesson is null)" Modal="true" TrapFocus="true"
+              class="lesson-dialog" @ondialogdismiss="Close">
+
+    <FluentDialogHeader>
+        <div class="ldlg-head">
+            <span class="ldlg-eyebrow">@Module?.Title @(Module is null ? "" : "·") @Lesson?.Pages</span>
+            <span class="ldlg-ttl">@Lesson?.Title</span>
+        </div>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        @if (Lesson is { } lesson)
+        {
+            // Computed once: HighlightsFor tokenises the whole question, so calling it from
+            // inside the bullet loop would redo that work for every point.
+            var marks = Marks;
+
+            if (marks.Length > 0)
+            {
+                <FluentMessageBar Intent="MessageIntent.Info" AllowDismiss="false">
+                    The @(marks.Length == 1 ? "highlighted point covers" : "highlighted points cover")
+                    what this question is testing.
+                </FluentMessageBar>
+            }
+
+            if (!string.IsNullOrWhiteSpace(lesson.Intro))
+            {
+                <div class="ldlg-intro">@((MarkupString)lesson.Intro)</div>
+            }
+
+            if (lesson.Points.Count > 0)
+            {
+                <h4 class="ldlg-h4">What to know</h4>
+                <ul class="ldlg-points">
+                    @for (var i = 0; i < lesson.Points.Count; i++)
+                    {
+                        <li class="@(marks.Contains(i) ? "marked" : "")">@lesson.Points[i]</li>
+                    }
+                </ul>
+            }
+
+            if (lesson.Essentials.Count > 0)
+            {
+                <h4 class="ldlg-h4">Where the exam catches people</h4>
+                <ul class="ldlg-essentials">
+                    @foreach (var e in lesson.Essentials)
+                    {
+                        <li>@e</li>
+                    }
+                </ul>
+            }
+
+            <p class="ldlg-ref">
+                @lesson.Objective
+                @if (Module is not null)
+                {
+                    <span> &middot; @Module.Pages</span>
+                }
+            </p>
+        }
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="Close">
+            Back to the question
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+@code {
+    /// <summary>The lesson to show, or null when the dialog is closed.</summary>
+    [Parameter] public Lesson? Lesson { get; set; }
+
+    /// <summary>The question the reader came from, used to pick the highlights.</summary>
+    [Parameter] public Item? Item { get; set; }
+
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private TrainingModule? Module =>
+        Lesson is null ? null : TrainingCatalog.ModuleOf(Lesson);
+
+    private int[] Marks =>
+        Lesson is null || Item is null
+            ? []
+            : [.. TrainingCatalog.HighlightsFor(Item, Lesson)];
+
+    private Task Close() => OnClose.InvokeAsync();
+}

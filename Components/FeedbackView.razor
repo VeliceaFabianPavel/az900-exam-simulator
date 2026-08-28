@@ -1,0 +1,83 @@
+@using MockExam.Fluent.Models
+@* Practice mode: the marked result of the question just answered. *@
+
+<div class="feedback">
+
+    <div class="fb-banner @Tone">
+        <span class="fb-mark">
+            <AppIcon Name="@(Correct ? "check-circle" : Answered ? "dismiss" : "question")" Size="26" />
+        </span>
+        <div class="fb-verdict">
+            <span class="fb-ttl">@Headline</span>
+            <span class="fb-sub">@Subline</span>
+        </div>
+        <FluentBadge Appearance="Appearance.Neutral">Question @Number</FluentBadge>
+    </div>
+
+    <div class="fb-stem">@((MarkupString)Item.Stem)</div>
+
+    <div class="fb-answers">
+        <div class="answer-block given @(Correct ? "ok" : "no")">
+            <h4>Your answer</h4>
+            @if (Given.Count == 0)
+            {
+                <p class="muted">You did not answer this one.</p>
+            }
+            else
+            {
+                <ul>@foreach (var g in Given) { <li>@g</li> }</ul>
+            }
+        </div>
+
+        @if (!Correct)
+        {
+            <div class="answer-block keyed">
+                <h4>Correct answer</h4>
+                <ul>@foreach (var e in Expected) { <li>@e</li> }</ul>
+            </div>
+        }
+    </div>
+
+    <div class="fb-why">
+        <h4>@(Correct ? "Why that is right" : "Why")</h4>
+        @((MarkupString)Item.Explanation)
+    </div>
+
+    <SourceLinks Item="Item" OnOpen="OnOpenLesson" />
+
+    <div class="fb-actions">
+        <FluentButton Appearance="Appearance.Neutral" OnClick="OnBack">
+            <AppIcon Name="chevron-left" Size="16" />
+            <span style="margin-left:6px">Change my answer</span>
+        </FluentButton>
+        <span class="fb-hint">Use <strong>@NextLabel</strong> below to carry on.</span>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Item Item { get; set; } = default!;
+    [Parameter, EditorRequired] public Response Response { get; set; } = default!;
+    [Parameter] public int Number { get; set; }
+    [Parameter] public bool Answered { get; set; }
+    [Parameter] public string NextLabel { get; set; } = "Next";
+    [Parameter] public EventCallback OnBack { get; set; }
+    [Parameter] public EventCallback<Lesson> OnOpenLesson { get; set; }
+
+    private bool Correct => Answered && Item.IsCorrect(Response);
+
+    private IReadOnlyList<string> Given => Item.ResponseLines(Response);
+
+    private IReadOnlyList<string> Expected => Item.CorrectAnswerLines;
+
+    private string Tone => Correct ? "ok" : Answered ? "no" : "skip";
+
+    private string Headline => Correct
+        ? "That is correct"
+        : Answered ? "That is not right" : "You skipped this one";
+
+    private string Subline => Correct
+        ? "Here is why, so you can be sure it was not a lucky guess."
+        : Answered
+            ? "Read why, then go back and change it if you want to."
+            : "The keyed answer and the reasoning are below.";
+}

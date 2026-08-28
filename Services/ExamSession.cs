@@ -51,6 +51,8 @@ public enum ExamScreen
     Summary,
     Ready,
     Item,
+    /// <summary>Practice mode: the marked result of the question just answered.</summary>
+    Feedback,
     Review,
     Score,
     /// <summary>Post-exam answer review with explanations.</summary>
@@ -88,6 +90,12 @@ public sealed class ExamSession
     public const int PassMark = 700;
 
     private readonly Dictionary<string, ItemState> _states = [];
+
+    /// <summary>
+    /// Items the candidate returned to after reading the marked result. Changing an answer
+    /// from that position is assistance, and the score report says it tracks exactly that.
+    /// </summary>
+    private readonly HashSet<string> _revisedAfterResult = [];
     private DateTimeOffset _startedAt = DateTimeOffset.UtcNow;
     private DateTimeOffset? _endedAt;
 
@@ -98,6 +106,12 @@ public sealed class ExamSession
     public ExamScreen Screen { get; private set; } = ExamScreen.Pick;
     public bool Ended { get; private set; }
     public bool Started { get; private set; }
+
+    /// <summary>
+    /// True once the review panel has been opened. Jumping to a question from there strands
+    /// the candidate, so the shortcut back only appears after they have been.
+    /// </summary>
+    public bool HasSeenReview { get; private set; }
     public ExamForm Form { get; private set; } = ExamCatalog.Forms[0];
 
     /// <summary>Delivery mode for the current attempt. Set by <see cref="SelectForm"/>.</summary>
@@ -109,16 +123,38 @@ public sealed class ExamSession
     /// <summary>True when the attempt runs against a countdown that can expire.</summary>
     public bool IsTimed => Mode == ExamMode.Exam;
 
+    /// <summary>
+    /// Practice mode: show the marked result after each question before moving on. The
+    /// candidate can turn this off, since fifty interstitials is a lot when revising fast.
+    /// </summary>
+    public bool CheckAfterEach { get; private set; } = true;
+
+    public void SetCheckAfterEach(bool on)
+    {
+        CheckAfterEach = on;
+        if (!on && Screen == ExamScreen.Feedback)
+        {
+            Screen = ExamScreen.Item;
+        }
+        Changed?.Invoke();
+    }
+
+    /// <summary>True when Next on the current question should show the result first.</summary>
+    public bool ShouldCheck =>
+        IsPractice && CheckAfterEach && Screen == ExamScreen.Item && Current.Item.Scored;
+
     /// <summary>Loads a form in the given mode and returns the session to its pre-exam state.</summary>
     public void SelectForm(ExamForm form, ExamMode mode = ExamMode.Exam)
     {
         Form = form;
         Mode = mode;
         _states.Clear();
+        _revisedAfterResult.Clear();
         Pages.Clear();
         Index = 0;
         Ended = false;
         Started = false;
+        HasSeenReview = false;
         _endedAt = null;
 
         var seq = 0;
@@ -184,7 +220,15 @@ public sealed class ExamSession
 
     public void SetResponse(string key, Response response)
     {
-        State(key).Response = response;
+        var state = State(key);
+
+        // Reworking an answer having just been shown whether it was right counts as help.
+        if (_revisedAfterResult.Contains(key) && !state.Response.SameAs(response))
+        {
+            state.UsedHelp = true;
+        }
+
+        state.Response = response;
         Changed?.Invoke();
     }
 
@@ -242,7 +286,8 @@ public sealed class ExamSession
     /// <summary>Questions whose hint was opened during a practice attempt.</summary>
     public int HintedCount => ScoredPages.Count(p => State(p.Key).UsedHint);
 
-    public bool CanGoPrevious => Screen == ExamScreen.Item && Index > 0;
+    public bool CanGoPrevious =>
+        (Screen == ExamScreen.Item && Index > 0) || Screen == ExamScreen.Feedback;
 
     public void GoTo(int index)
     {
@@ -277,10 +322,31 @@ public sealed class ExamSession
                 Screen = ExamScreen.Report;
                 break;
 
-            default:
+            case ExamScreen.Feedback:
+                // The result has been read; now actually move on.
                 if (Index >= Pages.Count - 1)
                 {
                     Screen = ExamScreen.Review;
+                    HasSeenReview = true;
+                }
+                else
+                {
+                    Index++;
+                    Screen = ExamScreen.Item;
+                }
+                break;
+
+            default:
+                if (ShouldCheck)
+                {
+                    Screen = ExamScreen.Feedback;
+                    break;
+                }
+
+                if (Index >= Pages.Count - 1)
+                {
+                    Screen = ExamScreen.Review;
+                    HasSeenReview = true;
                 }
                 else
                 {
@@ -298,15 +364,31 @@ public sealed class ExamSession
         {
             return;
         }
-        Index--;
+
+        // From the result screen, back means back to the question, so the answer can change.
+        if (Screen == ExamScreen.Feedback)
+        {
+            Screen = ExamScreen.Item;
+            _revisedAfterResult.Add(Current.Key);
+        }
+        else
+        {
+            Index--;
+        }
+
         Changed?.Invoke();
     }
 
     public void ShowReview()
     {
         Screen = ExamScreen.Review;
+        HasSeenReview = true;
         Changed?.Invoke();
     }
+
+    /// <summary>True when the candidate is on a question and can jump back to the review panel.</summary>
+    public bool CanReturnToReview =>
+        HasSeenReview && Screen is ExamScreen.Item or ExamScreen.Feedback;
 
     public void ShowReport()
     {
@@ -428,7 +510,7 @@ public sealed class ExamSession
     /// <summary>Vertical Exam Progress stepper shown in the toolbar.</summary>
     public IReadOnlyList<ProgressStep> Steps()
     {
-        var inExam = Screen is ExamScreen.Item or ExamScreen.Review
+        var inExam = Screen is ExamScreen.Item or ExamScreen.Feedback or ExamScreen.Review
             or ExamScreen.Score or ExamScreen.Report;
         var scored = Screen is ExamScreen.Score or ExamScreen.Report;
 
@@ -442,7 +524,8 @@ public sealed class ExamSession
             new("Exam Overview", Screen is ExamScreen.Summary or ExamScreen.Ready ? StepState.Current
                 : inExam ? StepState.Done : StepState.Pending),
 
-            new($"Questions ({TotalQuestions})", Screen == ExamScreen.Item ? StepState.Current
+            new($"Questions ({TotalQuestions})",
+                Screen is ExamScreen.Item or ExamScreen.Feedback ? StepState.Current
                 : scored || Screen == ExamScreen.Review ? StepState.Done : StepState.Pending),
 
             new("End Questions", Screen == ExamScreen.Review ? StepState.Current

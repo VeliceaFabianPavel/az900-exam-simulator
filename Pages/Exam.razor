@@ -169,6 +169,16 @@ else
                 {
                     <ReportView Session="Session" OnRestart="Session.Restart" OnBack="Session.ShowScore" />
                 }
+                else if (Session.Screen == ExamScreen.Feedback)
+                {
+                    <FeedbackView Item="Session.Current.Item"
+                                  Response="Session.CurrentState.Response"
+                                  Number="@(Session.Current.Seq ?? 0)"
+                                  Answered="@Session.IsComplete(Session.Current)"
+                                  NextLabel="@NextLabel"
+                                  OnBack="Session.Previous"
+                                  OnOpenLesson="OpenLesson" />
+                }
                 else
                 {
                     <ItemBody Item="Session.Current.Item"
@@ -180,7 +190,8 @@ else
                         <AssistPanel Item="Session.Current.Item"
                                      State="Session.CurrentState"
                                      OnToggleHint="ToggleHint"
-                                     OnToggleHelp="ToggleHelp" />
+                                     OnToggleHelp="ToggleHelp"
+                                     OnOpenLesson="OpenLesson" />
                     }
                 }
             </div>
@@ -237,6 +248,18 @@ else
                     <AppIcon Name="chevron-right" Size="16" />
                 </FluentButton>
 
+                @* Appears once the review panel has been opened, so jumping to a question
+                   from there is not a one-way trip. *@
+                @if (Session.CanReturnToReview)
+                {
+                    <FluentButton Appearance="Appearance.Neutral" Class="footer-review"
+                                  Title="Back to the review panel"
+                                  OnClick="Session.ShowReview">
+                        <AppIcon Name="list" Size="16" />
+                        <span class="btn-label" style="margin-left:6px">Back to review</span>
+                    </FluentButton>
+                }
+
                 <span class="spacer"></span>
 
                 @* Phone-only: reveals the secondary row, which is collapsed by default. *@
@@ -255,6 +278,8 @@ else
 }
 
 @* ------------------------------------------------------------ overlays *@
+
+<LessonDialog Lesson="_lesson" Item="_lessonItem" OnClose="CloseLesson" />
 
 <FluentDialog Hidden="@(_overlay != "calculator")" Modal="false" TrapFocus="false">
     <FluentDialogHeader>Calculator</FluentDialogHeader>
@@ -340,6 +365,8 @@ else
 @code {
     private bool _railExpanded = true;
     private bool _navOpen;        // phone drawer
+    private Lesson? _lesson;      // training lesson shown over the question
+    private Item? _lessonItem;    // the question the reader opened it from
     private bool _moreOpen;       // phone secondary action row
     private bool _confirmEnd;
     private bool _declined;
@@ -437,6 +464,18 @@ else
 
     private void ToggleFeedback(bool _) => Session.ToggleFeedback(Session.Current.Key);
 
+    private void OpenLesson(Lesson lesson)
+    {
+        _lesson = lesson;
+        _lessonItem = Session.Current.Item;
+    }
+
+    private void CloseLesson()
+    {
+        _lesson = null;
+        _lessonItem = null;
+    }
+
     private void ToggleHint() => Session.ToggleHint(Session.Current.Key);
 
     private void ToggleHelp() => Session.ToggleHelp(Session.Current.Key);
@@ -450,6 +489,7 @@ else
 
     private string HeaderTitle => Session.Screen switch
     {
+        ExamScreen.Feedback => $"Question {Session.Current.Seq} · result",
         ExamScreen.Review => "Review",
         ExamScreen.Score => "Score report",
         ExamScreen.Report => "Answer review",
@@ -464,9 +504,14 @@ else
         _ => $"{Session.Form.Title} \u00b7 {Session.Current.Item.Domain.ShortName()}"
     };
 
-    private string NextLabel => Session.Screen == ExamScreen.Review
-        ? Session.IsPractice ? "Finish and score" : "End exam"
-        : Session.Index >= Session.Pages.Count - 1 ? "Review" : "Next";
+    private string NextLabel => Session.Screen switch
+    {
+        ExamScreen.Review => Session.IsPractice ? "Finish and score" : "End exam",
+        ExamScreen.Feedback => Session.Index >= Session.Pages.Count - 1
+            ? "Review"
+            : "Next question",
+        _ => Session.Index >= Session.Pages.Count - 1 ? "Review" : "Next"
+    };
 
     /// <summary>Counts down in Exam mode and up in Practice mode.</summary>
     private string Clock
