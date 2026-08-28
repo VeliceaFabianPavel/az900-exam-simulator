@@ -1,0 +1,118 @@
+@using MockExam.Fluent.Models
+@* The reading pane for a single lesson. *@
+
+<article class="lesson">
+    <header class="lesson-head">
+        <div>
+            <span class="lesson-eyebrow">@Module.Title</span>
+            <h1 class="lesson-ttl">@Lesson.Title</h1>
+        </div>
+        <FluentBadge Appearance="Appearance.Neutral">@Lesson.Pages</FluentBadge>
+    </header>
+
+    <p class="lesson-objective">
+        <AppIcon Name="doc" Size="16" />
+        <span>@Lesson.Objective</span>
+    </p>
+
+    <FluentDivider Style="margin: 18px 0;" />
+
+    @if (!string.IsNullOrWhiteSpace(Lesson.Intro))
+    {
+        <div class="lesson-intro">@((MarkupString)Lesson.Intro)</div>
+    }
+
+    @if (Lesson.Points.Count > 0)
+    {
+        <h2 class="lesson-h2">What to know</h2>
+        <ul class="lesson-points">
+            @foreach (var p in Lesson.Points)
+            {
+                <li>@p</li>
+            }
+        </ul>
+    }
+
+    @if (Lesson.Table is { } table)
+    {
+        <h2 class="lesson-h2">@table.Caption</h2>
+        <div class="lesson-table-wrap">
+            <table class="lesson-table">
+                <thead>
+                    <tr>
+                        @foreach (var h in table.Headers)
+                        {
+                            <th>@h</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in table.Rows)
+                    {
+                        <tr>
+                            @foreach (var cell in row)
+                            {
+                                <td>@cell</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (Lesson.Essentials.Count > 0)
+    {
+        <h2 class="lesson-h2">Where the exam catches people</h2>
+        <ul class="lesson-essentials">
+            @foreach (var e in Lesson.Essentials)
+            {
+                <li>
+                    <AppIcon Name="bulb" Size="16" />
+                    <span>@e</span>
+                </li>
+            }
+        </ul>
+    }
+
+    @if (Questions.Count > 0)
+    {
+        <FluentMessageBar Intent="MessageIntent.Info" AllowDismiss="false">
+            The question bank has @Questions.Count question@(Questions.Count == 1 ? "" : "s")
+            on this objective. Sit a practice exam to meet them in context.
+        </FluentMessageBar>
+    }
+
+    <footer class="lesson-foot">
+        <FluentButton Appearance="Appearance.Neutral" Disabled="@(!HasPrevious)" OnClick="OnPrevious">
+            <AppIcon Name="chevron-left" Size="16" />
+            <span style="margin-left:6px">Previous</span>
+        </FluentButton>
+
+        <FluentButton Appearance="@(IsRead ? Appearance.Neutral : Appearance.Accent)"
+                      OnClick="OnToggleRead">
+            <AppIcon Name="@(IsRead ? "check-circle" : "check")" Size="16" />
+            <span style="margin-left:6px">@(IsRead ? "Marked as read" : "Mark as read")</span>
+        </FluentButton>
+
+        <span class="spacer"></span>
+
+        <FluentButton Appearance="Appearance.Neutral" Disabled="@(!HasNext)" OnClick="OnNext">
+            <span style="margin-right:6px">Next</span>
+            <AppIcon Name="chevron-right" Size="16" />
+        </FluentButton>
+    </footer>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public TrainingModule Module { get; set; } = default!;
+    [Parameter, EditorRequired] public Lesson Lesson { get; set; } = default!;
+    [Parameter] public bool IsRead { get; set; }
+    [Parameter] public bool HasPrevious { get; set; }
+    [Parameter] public bool HasNext { get; set; }
+    [Parameter] public EventCallback OnPrevious { get; set; }
+    [Parameter] public EventCallback OnNext { get; set; }
+    [Parameter] public EventCallback OnToggleRead { get; set; }
+
+    private IReadOnlyList<Item> Questions => TrainingCatalog.QuestionsFor(Lesson);
+}

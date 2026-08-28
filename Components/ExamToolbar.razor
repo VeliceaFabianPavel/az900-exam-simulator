@@ -53,6 +53,22 @@
         </ol>
     </RailSection>
 
+    @if (Session.IsPractice)
+    {
+        <RailSection Icon="check-circle" Label="Practice options" Expanded="Expanded"
+                     Open="_practice" OpenChanged="v => _practice = v">
+            <div class="rail-opt">
+                <FluentSwitch Value="Session.CheckAfterEach"
+                              ValueChanged="@((bool v) => Session.SetCheckAfterEach(v))"
+                              Label="Check my answer after each question" />
+                <p class="rail-opt-note">
+                    Shows whether you got it right, and why, before moving on. Turn it off to
+                    work straight through and review everything at the end.
+                </p>
+            </div>
+        </RailSection>
+    }
+
     <div class="rail-sep"></div>
 
     @* ------------------------------------------------- simple commands *@
@@ -93,6 +109,7 @@
     [Parameter] public EventCallback<DesignThemeModes> ModeChanged { get; set; }
 
     private bool _details;
+    private bool _practice = true;
     private bool _progress = true;
     private bool _scheme;
 

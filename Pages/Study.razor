@@ -1,0 +1,182 @@
+@page "/study"
+@using MockExam.Fluent.Models
+@implements IDisposable
+@inject TrainingProgress Progress
+@inject NavigationManager Nav
+
+<PageTitle>Study guide</PageTitle>
+
+<div class="study-shell">
+
+    <header class="study-header">
+        <button type="button" class="study-back" @onclick="BackOrExit">
+            <AppIcon Name="chevron-left" Size="18" />
+            <span>@(Progress.CurrentModule is null ? "Exams" : "All modules")</span>
+        </button>
+
+        <div class="study-title">
+            <span class="study-ttl">Study guide</span>
+            <span class="study-sub">Exam AZ-900: Microsoft Azure Fundamentals</span>
+        </div>
+
+        <div class="study-progress">
+            <span class="study-progress-lbl">
+                @Progress.ReadCount of @Progress.TotalLessons lessons read
+            </span>
+            <FluentProgress Value="@((int)Progress.PercentRead)" Max="100" />
+        </div>
+    </header>
+
+    @if (Progress.CurrentModule is { } current)
+    {
+        @* ----------------------------------------------------- module reading *@
+        <main class="study-main reading">
+
+            <nav class="study-rail" aria-label="Lessons in this module">
+                <div class="study-rail-head">
+                    <span class="study-rail-ttl">@current.Title</span>
+                    <span class="study-rail-sub">@current.Pages</span>
+                </div>
+
+                <ol class="lesson-list">
+                    @foreach (var entry in current.Lessons)
+                    {
+                        var nav = entry;
+                        var on = Progress.CurrentLesson?.Id == nav.Id;
+                        <li>
+                            <button type="button"
+                                    class="lesson-link @(on ? "current" : "") @(Progress.IsRead(nav) ? "read" : "")"
+                                    aria-current="@(on ? "true" : "false")"
+                                    @onclick="() => Progress.Open(nav)">
+                                <span class="lesson-tick">
+                                    @if (Progress.IsRead(nav))
+                                    {
+                                        <AppIcon Name="check" Size="12" />
+                                    }
+                                </span>
+                                <span class="lesson-link-txt">@nav.Title</span>
+                            </button>
+                        </li>
+                    }
+                </ol>
+            </nav>
+
+            <section class="study-body">
+                @if (Progress.CurrentLesson is { } lesson)
+                {
+                    <LessonView Module="current"
+                                Lesson="lesson"
+                                IsRead="Progress.IsRead(lesson)"
+                                HasPrevious="@(Index(current, lesson) > 0)"
+                                HasNext="@(Index(current, lesson) < current.LessonCount - 1)"
+                                OnPrevious="Previous"
+                                OnNext="Next"
+                                OnToggleRead="() => Progress.ToggleRead(lesson)" />
+                }
+                else
+                {
+                    <FluentMessageBar Intent="MessageIntent.Info" AllowDismiss="false">
+                        Select a lesson to begin.
+                    </FluentMessageBar>
+                }
+            </section>
+        </main>
+    }
+    else
+    {
+        @* ---------------------------------------------------- module overview *@
+        <main class="study-main">
+            <div class="study-intro">
+                <h1 class="study-h1">Work through the material</h1>
+                <p>
+                    Seven modules, one per in-scope chapter of the study guide, covering the same
+                    ground as the @QuestionBank.All.Count questions in the practice bank. Each
+                    lesson lists what to know, the distinctions the exam turns on, and the pages
+                    the material was written against.
+                </p>
+            </div>
+
+            <div class="module-grid">
+                @foreach (var m in TrainingCatalog.Modules)
+                {
+                    var module = m;
+                    var read = Progress.ReadCountIn(module);
+                    var done = Progress.IsComplete(module);
+
+                    <FluentCard Class="module-card">
+                        <div class="module-head">
+                            <span class="module-name">@module.Title</span>
+                            @if (done)
+                            {
+                                <span class="module-done" title="All lessons read">
+                                    <AppIcon Name="check-circle" Size="18" />
+                                </span>
+                            }
+                        </div>
+
+                        <p class="module-blurb">@module.Blurb</p>
+
+                        <div class="module-meta">
+                            <FluentBadge Appearance="Appearance.Neutral">
+                                @module.Domain.ShortName()
+                            </FluentBadge>
+                            <span class="module-pages">@module.Pages</span>
+                        </div>
+
+                        <div class="module-bar">
+                            <FluentProgress Value="@Percent(read, module.LessonCount)" Max="100" />
+                            <span class="module-count">
+                                @read of @module.LessonCount lessons &middot;
+                                @TrainingCatalog.QuestionsFor(module).Count questions
+                            </span>
+                        </div>
+
+                        <FluentButton Appearance="Appearance.Accent"
+                                      OnClick="() => Progress.Open(module)">
+                            @(read == 0 ? "Start module" : done ? "Review module" : "Continue")
+                        </FluentButton>
+                    </FluentCard>
+                }
+            </div>
+        </main>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized() => Progress.Changed += OnChanged;
+
+    public void Dispose() => Progress.Changed -= OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private static int Percent(int read, int total) =>
+        total == 0 ? 0 : 100 * read / total;
+
+    private static int Index(TrainingModule module, Lesson lesson)
+    {
+        for (var i = 0; i < module.Lessons.Count; i++)
+        {
+            if (module.Lessons[i].Id == lesson.Id)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private void Previous() => Progress.Retreat();
+
+    private void Next() => Progress.Advance();
+
+    private void BackOrExit()
+    {
+        if (Progress.CurrentModule is null)
+        {
+            Nav.NavigateTo("");
+        }
+        else
+        {
+            Progress.BackToModules();
+        }
+    }
+}

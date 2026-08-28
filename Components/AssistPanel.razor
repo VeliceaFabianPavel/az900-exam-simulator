@@ -51,6 +51,8 @@
                     <span> &middot; @Item.Reference</span>
                 }
             </p>
+
+            <SourceLinks Item="Item" OnOpen="OnOpenLesson" />
         </div>
     </aside>
 }
@@ -60,4 +62,7 @@
     [Parameter, EditorRequired] public ItemState State { get; set; } = default!;
     [Parameter] public EventCallback OnToggleHint { get; set; }
     [Parameter] public EventCallback OnToggleHelp { get; set; }
+
+    /// <summary>Raised when the reader opens the training lesson behind this question.</summary>
+    [Parameter] public EventCallback<Lesson> OnOpenLesson { get; set; }
 }

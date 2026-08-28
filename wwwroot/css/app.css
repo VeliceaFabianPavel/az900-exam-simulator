@@ -2198,12 +2198,17 @@ body {
 
     /* Previous and Next share the width; the overflow button stays small.
        Selector avoids depending on the element name FluentButton renders. */
-    .footer-primary > *:not(.spacer):not(.footer-more) {
+    .footer-primary > *:not(.spacer):not(.footer-more):not(.footer-review) {
         flex: 1 1 0;
         min-width: 0;
     }
 
     .footer-primary .spacer {
+        display: none;
+    }
+
+    /* Icon only on a phone: Previous and Next need the width more than this label does. */
+    .footer-review .btn-label {
         display: none;
     }
 
@@ -2378,6 +2383,27 @@ body {
         display: none;
     }
 
+    /* Stacked to one column, the decorative card stack ends up behind the title and the
+       accent-coloured text lands on blue. Paint the panel deliberately instead, and drop
+       the stack, so the contrast is guaranteed rather than incidental. */
+    .pre-art {
+        background: linear-gradient(150deg, #4fc3f7, #1565c0);
+        padding: 26px 20px 30px;
+    }
+
+    .pre-art-stack {
+        display: none;
+    }
+
+    .pre-art-ttl,
+    .pre-art-sub {
+        color: #fff;
+    }
+
+    .pre-art-ttl {
+        font-size: var(--type-ramp-plus-3-font-size);
+    }
+
     .pre-ttl {
         font-size: var(--type-ramp-plus-4-font-size);
         line-height: 1.2;
@@ -2463,13 +2489,15 @@ body {
         gap: 8px;
     }
 
-    /* Dialogs --------------------------------------------------------- */
+    /* Dialogs ---------------------------------------------------------
+       Size them through the library's own custom properties. Fluent computes
+       ::part(control) as width/height calc()s from these, and lays the dialog out
+       as a grid whose third row is the footer, so scrolling the control itself
+       drags the footer up into the body text. */
 
-    fluent-dialog::part(control) {
-        width: calc(100vw - 24px);
-        max-width: calc(100vw - 24px);
-        max-height: 86dvh;
-        overflow: auto;
+    fluent-dialog {
+        --dialog-width: calc(100vw - 20px);
+        --dialog-height: min(480px, 86dvh);
     }
 }
 
@@ -2509,5 +2537,910 @@ body {
     .hdr-thin > span,
     .progress-track > span {
         transition: none;
+    }
+}
+
+/* ==================================================================== *
+ *  Study guide                                                         *
+ * ==================================================================== */
+
+.study-shell {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+    height: 100dvh;
+    background-color: var(--neutral-layer-2);
+}
+
+.study-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 20px;
+    padding: 12px 28px;
+    padding-top: calc(12px + env(safe-area-inset-top));
+    background-color: var(--neutral-layer-1);
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+    z-index: 2;
+}
+
+.study-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 6px 14px 6px 8px;
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-radius: var(--control-corner-radius, 4px);
+    background: transparent;
+    color: var(--neutral-foreground-rest);
+    font-family: inherit;
+    font-size: var(--type-ramp-minus-1-font-size);
+    cursor: pointer;
+}
+
+.study-back:hover {
+    background-color: var(--neutral-fill-stealth-hover);
+}
+
+.study-title {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.study-ttl {
+    font-size: var(--type-ramp-plus-2-font-size);
+    line-height: var(--type-ramp-plus-2-line-height);
+    font-weight: 600;
+}
+
+.study-sub {
+    font-size: var(--type-ramp-minus-1-font-size);
+    color: var(--neutral-foreground-hint);
+}
+
+.study-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 220px;
+}
+
+.study-progress-lbl {
+    font-size: var(--type-ramp-minus-1-font-size);
+    color: var(--neutral-foreground-hint);
+    text-align: right;
+}
+
+.study-main {
+    overflow: auto;
+    padding: 24px 28px 40px;
+}
+
+.study-main.reading {
+    display: grid;
+    grid-template-columns: minmax(220px, 280px) 1fr;
+    gap: 24px;
+    align-items: start;
+    padding-top: 20px;
+}
+
+/* Module overview ------------------------------------------------------ */
+
+.study-intro {
+    max-width: 760px;
+    margin: 0 auto 24px;
+}
+
+.study-h1 {
+    margin: 0 0 8px;
+    font-size: var(--type-ramp-plus-4-font-size);
+    line-height: 1.2;
+    font-weight: 600;
+}
+
+.study-intro p {
+    margin: 0;
+    color: var(--neutral-foreground-hint);
+}
+
+.module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.module-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px;
+}
+
+.module-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.module-name {
+    font-size: var(--type-ramp-plus-1-font-size);
+    font-weight: 600;
+}
+
+.module-done {
+    margin-left: auto;
+    color: #107c10;
+    display: inline-flex;
+}
+
+.module-blurb {
+    margin: 0;
+    color: var(--neutral-foreground-hint);
+    font-size: var(--type-ramp-minus-1-font-size);
+    flex: 1 1 auto;
+}
+
+.module-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.module-pages {
+    font-size: var(--type-ramp-minus-1-font-size);
+    color: var(--neutral-foreground-hint);
+}
+
+.module-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.module-count {
+    font-size: var(--type-ramp-minus-2-font-size, 10px);
+    color: var(--neutral-foreground-hint);
+}
+
+/* Lesson rail ---------------------------------------------------------- */
+
+.study-rail {
+    position: sticky;
+    top: 0;
+    background-color: var(--neutral-layer-1);
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-radius: var(--layer-corner-radius, 8px);
+    padding: 12px;
+}
+
+.study-rail-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 8px 10px;
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+    margin-bottom: 8px;
+}
+
+.study-rail-ttl {
+    font-weight: 600;
+}
+
+.study-rail-sub {
+    font-size: var(--type-ramp-minus-1-font-size);
+    color: var(--neutral-foreground-hint);
+}
+
+.lesson-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: lesson;
+}
+
+.lesson-link {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    min-height: 40px;
+    padding: 9px 10px;
+    text-align: left;
+    border: none;
+    border-radius: var(--control-corner-radius, 4px);
+    background: transparent;
+    color: var(--neutral-foreground-rest);
+    font-family: inherit;
+    font-size: var(--type-ramp-minus-1-font-size);
+    cursor: pointer;
+}
+
+.lesson-link:hover {
+    background-color: var(--neutral-fill-stealth-hover);
+}
+
+.lesson-link.current {
+    background-color: var(--neutral-fill-secondary-rest);
+    font-weight: 600;
+    box-shadow: inset 3px 0 0 0 var(--accent-fill-rest);
+}
+
+.lesson-tick {
+    display: grid;
+    place-items: center;
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    border-radius: 50%;
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    color: var(--foreground-on-accent-rest);
+}
+
+.lesson-link.read .lesson-tick {
+    background-color: #107c10;
+    border-color: #107c10;
+}
+
+.lesson-link-txt {
+    min-width: 0;
+}
+
+/* Lesson body ---------------------------------------------------------- */
+
+.study-body {
+    min-width: 0;
+}
+
+.lesson {
+    background-color: var(--neutral-layer-1);
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-radius: var(--layer-corner-radius, 8px);
+    box-shadow: var(--elevation-shadow-card-rest);
+    padding: 26px 30px 20px;
+    max-width: 900px;
+}
+
+.lesson-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.lesson-eyebrow {
+    display: block;
+    font-size: var(--type-ramp-minus-1-font-size);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--neutral-foreground-hint);
+    font-weight: 600;
+}
+
+.lesson-ttl {
+    margin: 4px 0 0;
+    font-size: var(--type-ramp-plus-3-font-size);
+    line-height: 1.2;
+    font-weight: 600;
+}
+
+.lesson-head > :last-child {
+    margin-left: auto;
+    flex: 0 0 auto;
+}
+
+.lesson-objective {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 0;
+    color: var(--neutral-foreground-hint);
+    font-size: var(--type-ramp-minus-1-font-size);
+}
+
+.lesson-intro p {
+    margin: 0 0 0.9em;
+}
+
+.lesson-h2 {
+    margin: 26px 0 10px;
+    font-size: var(--type-ramp-plus-1-font-size);
+    font-weight: 600;
+}
+
+.lesson-points {
+    margin: 0;
+    padding-left: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.lesson-essentials {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.lesson-essentials li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-left: 4px solid #c19c00;
+    border-radius: var(--layer-corner-radius, 8px);
+    background-color: rgba(255, 185, 0, 0.09);
+}
+
+.lesson-essentials li > .app-icon {
+    flex: 0 0 auto;
+    margin-top: 2px;
+    color: #8a6f00;
+}
+
+.lesson-table-wrap {
+    overflow-x: auto;
+}
+
+.lesson-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-radius: var(--layer-corner-radius, 8px);
+    overflow: hidden;
+}
+
+.lesson-table th {
+    text-align: left;
+    padding: 10px 14px;
+    background-color: var(--neutral-layer-2);
+    font-size: var(--type-ramp-minus-1-font-size);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--neutral-foreground-hint);
+    white-space: nowrap;
+}
+
+.lesson-table td {
+    padding: 11px 14px;
+    border-top: 1px solid var(--neutral-stroke-divider-rest);
+    vertical-align: top;
+}
+
+.lesson-foot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 26px;
+    padding-top: 16px;
+    border-top: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.lesson-foot .spacer {
+    flex: 1 1 auto;
+}
+
+/* Entry point on the exam picker --------------------------------------- */
+
+.study-cta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    margin: 4px 0 8px;
+    padding: 14px 18px;
+    text-align: left;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    background-color: var(--neutral-layer-2);
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-radius: var(--layer-corner-radius, 8px);
+    cursor: pointer;
+    transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.study-cta:hover {
+    border-color: var(--accent-fill-rest);
+    background-color: var(--neutral-layer-1);
+}
+
+.study-cta-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: var(--accent-fill-rest);
+    color: var(--foreground-on-accent-rest);
+}
+
+.study-cta-txt {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.study-cta-ttl {
+    font-weight: 600;
+}
+
+.study-cta-sub {
+    font-size: var(--type-ramp-minus-1-font-size);
+    color: var(--neutral-foreground-hint);
+}
+
+/* Phone ---------------------------------------------------------------- */
+
+@media (max-width: 720px) {
+    .study-header {
+        grid-template-columns: auto 1fr;
+        gap: 10px;
+        padding: 10px 12px;
+        padding-top: calc(10px + env(safe-area-inset-top));
+    }
+
+    .study-back span {
+        display: none;
+    }
+
+    .study-back {
+        padding: 6px;
+        width: 40px;
+        justify-content: center;
+    }
+
+    .study-ttl {
+        font-size: var(--type-ramp-plus-1-font-size);
+    }
+
+    .study-sub {
+        display: none;
+    }
+
+    .study-progress {
+        grid-column: 1 / -1;
+        min-width: 0;
+    }
+
+    .study-progress-lbl {
+        text-align: left;
+    }
+
+    .study-main {
+        padding: 14px 12px 32px;
+    }
+
+    /* The rail becomes a list above the lesson rather than a sidebar. */
+    .study-main.reading {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .study-rail {
+        position: static;
+    }
+
+    .module-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .lesson {
+        padding: 18px 16px 16px;
+    }
+
+    .lesson-head {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .lesson-head > :last-child {
+        margin-left: 0;
+    }
+
+    .lesson-ttl {
+        font-size: var(--type-ramp-plus-2-font-size);
+    }
+
+    .lesson-foot {
+        flex-wrap: wrap;
+    }
+
+    .lesson-foot .spacer {
+        display: none;
+    }
+
+    .lesson-foot > * {
+        flex: 1 1 auto;
+    }
+}
+
+/* ==================================================================== *
+ *  Practice: per-question result, and links into the study guide       *
+ * ==================================================================== */
+
+.feedback {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.fb-banner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 22px;
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-left-width: 6px;
+    border-radius: var(--layer-corner-radius, 8px);
+    background-color: var(--neutral-layer-2);
+}
+
+.fb-banner.ok {
+    border-left-color: #107c10;
+    background-color: rgba(16, 124, 16, 0.09);
+}
+
+.fb-banner.no {
+    border-left-color: #c50f1f;
+    background-color: rgba(197, 15, 31, 0.08);
+}
+
+.fb-banner.skip {
+    border-left-color: #c19c00;
+    background-color: rgba(255, 185, 0, 0.09);
+}
+
+.fb-mark {
+    display: inline-flex;
+    flex: 0 0 auto;
+}
+
+.fb-banner.ok .fb-mark { color: #107c10; }
+.fb-banner.no .fb-mark { color: #c50f1f; }
+.fb-banner.skip .fb-mark { color: #8a6f00; }
+
+.fb-verdict {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.fb-ttl {
+    font-size: var(--type-ramp-plus-2-font-size);
+    line-height: 1.2;
+    font-weight: 600;
+}
+
+.fb-sub {
+    font-size: var(--type-ramp-minus-1-font-size);
+    color: var(--neutral-foreground-hint);
+}
+
+.fb-banner > :last-child {
+    margin-left: auto;
+    flex: 0 0 auto;
+}
+
+.fb-stem {
+    padding-left: 14px;
+    border-left: 3px solid var(--neutral-stroke-divider-rest);
+    color: var(--neutral-foreground-hint);
+}
+
+.fb-stem p {
+    margin: 0 0 0.6em;
+}
+
+.fb-answers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.fb-answers .answer-block {
+    padding: 14px 16px;
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-radius: var(--layer-corner-radius, 8px);
+    background-color: var(--neutral-layer-2);
+}
+
+.fb-answers .answer-block.ok {
+    border-color: #107c10;
+}
+
+.fb-answers .answer-block.no {
+    border-color: #c50f1f;
+}
+
+.fb-answers h4 {
+    margin: 0 0 8px;
+    font-size: var(--type-ramp-minus-1-font-size);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--neutral-foreground-hint);
+}
+
+.fb-answers ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.fb-why {
+    padding-top: 16px;
+    border-top: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.fb-why h4 {
+    margin: 0 0 8px;
+    font-size: var(--type-ramp-minus-1-font-size);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--neutral-foreground-hint);
+}
+
+.fb-why p {
+    margin: 0 0 0.8em;
+}
+
+.fb-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding-top: 6px;
+}
+
+.fb-hint {
+    font-size: var(--type-ramp-minus-1-font-size);
+    color: var(--neutral-foreground-hint);
+}
+
+/* Links into the study guide ------------------------------------------- */
+
+.source-links {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--neutral-stroke-divider-rest);
+}
+
+.source-lbl {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--type-ramp-minus-1-font-size);
+    font-weight: 600;
+    color: var(--neutral-foreground-hint);
+}
+
+.source-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.source-link {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    min-height: 36px;
+    padding: 7px 14px;
+    border: 1px solid var(--accent-fill-rest);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--accent-foreground-rest);
+    font-family: inherit;
+    font-size: var(--type-ramp-minus-1-font-size);
+    cursor: pointer;
+    text-align: left;
+}
+
+.source-link:hover {
+    background-color: var(--accent-fill-rest);
+    color: var(--foreground-on-accent-rest);
+}
+
+.source-link:hover .source-link-pages {
+    color: inherit;
+    opacity: 0.85;
+}
+
+.source-link-ttl {
+    font-weight: 600;
+}
+
+.source-link-pages {
+    color: var(--neutral-foreground-hint);
+    font-size: var(--type-ramp-minus-2-font-size, 10px);
+}
+
+/* Lesson dialog --------------------------------------------------------- */
+
+.ldlg-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ldlg-eyebrow {
+    font-size: var(--type-ramp-minus-1-font-size);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--neutral-foreground-hint);
+    font-weight: 600;
+}
+
+.ldlg-ttl {
+    font-size: var(--type-ramp-plus-2-font-size);
+    font-weight: 600;
+}
+
+.ldlg-intro p {
+    margin: 0 0 0.8em;
+}
+
+.ldlg-h4 {
+    margin: 20px 0 8px;
+    font-size: var(--type-ramp-minus-1-font-size);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--neutral-foreground-hint);
+}
+
+.ldlg-points {
+    margin: 0;
+    padding-left: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* The point or points this question is actually testing. */
+.ldlg-points li.marked {
+    position: relative;
+    list-style: none;
+    margin-left: -22px;
+    padding: 10px 12px 10px 14px;
+    border-left: 4px solid var(--accent-fill-rest);
+    border-radius: 0 var(--layer-corner-radius, 8px) var(--layer-corner-radius, 8px) 0;
+    background-color: color-mix(in srgb, var(--accent-fill-rest) 16%, transparent);
+    font-weight: 600;
+}
+
+.ldlg-essentials {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ldlg-essentials li {
+    padding: 10px 12px;
+    border-left: 3px solid #c19c00;
+    border-radius: 0 6px 6px 0;
+    background-color: rgba(255, 185, 0, 0.09);
+    font-size: var(--type-ramp-minus-1-font-size);
+}
+
+.ldlg-ref {
+    margin: 18px 0 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--neutral-stroke-divider-rest);
+    color: var(--neutral-foreground-hint);
+    font-size: var(--type-ramp-minus-1-font-size);
+}
+
+.lesson-dialog {
+    --dialog-width: 720px;
+    --dialog-height: min(80vh, 760px);
+}
+
+/* The body is the scroll container so the header and footer stay put. Overriding
+   Fluent's own scoped rules, whose generated attribute selector cannot be
+   reproduced here, hence the importance flags. */
+fluent-dialog .fluent-dialog-body {
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+}
+
+fluent-dialog .fluent-dialog-footer {
+    background-color: var(--neutral-layer-floating, var(--neutral-layer-1));
+}
+
+/* Toolbar option -------------------------------------------------------- */
+
+.rail-opt {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 2px;
+}
+
+.rail-opt-note {
+    margin: 0;
+    font-size: var(--type-ramp-minus-2-font-size, 10px);
+    line-height: 1.45;
+    color: var(--neutral-foreground-hint);
+}
+
+/* Phone ----------------------------------------------------------------- */
+
+@media (max-width: 720px) {
+    .fb-banner {
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 14px 16px;
+    }
+
+    .fb-banner > :last-child {
+        margin-left: 0;
+    }
+
+    .fb-ttl {
+        font-size: var(--type-ramp-plus-1-font-size);
+    }
+
+    .fb-answers {
+        grid-template-columns: 1fr;
+    }
+
+    .source-links {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .source-link {
+        min-height: 44px;
+        width: 100%;
+    }
+
+    .fb-actions > * {
+        flex: 1 1 auto;
+    }
+
+    /* The lesson is long, so it gets the screen; short dialogs above keep their size. */
+    .lesson-dialog {
+        --dialog-width: calc(100vw - 20px);
+        --dialog-height: 88dvh;
+    }
+
+    /* One full-width action rather than a button floating at its natural size. */
+    .fluent-dialog-footer fluent-button {
+        width: 100%;
+    }
+
+    /* Fluent hard-codes the message bar at 12px with a 36px min-height, which reads as
+       cramped on a phone. Its scoped selectors carry a generated attribute, so these
+       need the importance flag to land. */
+    .fluent-messagebar {
+        min-height: 44px !important;
+        padding: 4px 12px !important;
+    }
+
+    .fluent-messagebar-message {
+        font-size: var(--type-ramp-minus-1-font-size) !important;
+        line-height: 1.45 !important;
+        padding: 10px 0 !important;
     }
 }
