@@ -5,7 +5,7 @@
 
 <p class="score-form">
     @Session.Form.Title &middot; Exam AZ-900: Microsoft Azure Fundamentals
-    &middot; @Session.Mode.Name() mode
+    &middot; @T.ModeName(Session.Mode)
 </p>
 
 <div class="score-banner @(Session.Passed ? "pass" : "fail")">
@@ -14,7 +14,7 @@
         <span class="score-scale">of 1000</span>
     </div>
     <div class="score-verdict">
-        <span class="verdict">@(Session.Passed ? "Pass" : "Did not pass")</span>
+        <span class="verdict">@(Session.Passed ? T.Pass : T.DidNotPass)</span>
         <span class="verdict-note">
             A scaled score of @ExamSession.PassMark or higher is required to pass.
         </span>
@@ -24,19 +24,19 @@
 <div class="score-grid">
     <div class="score-tile">
         <div class="val">@Session.CorrectCount / @Session.TotalQuestions</div>
-        <div class="lbl">Correct answers</div>
+        <div class="lbl">@T.CorrectAnswers</div>
     </div>
     <div class="score-tile">
         <div class="val">@Percent%</div>
-        <div class="lbl">Percent correct</div>
+        <div class="lbl">@T.PercentCorrect</div>
     </div>
     <div class="score-tile">
         <div class="val">@Unanswered</div>
-        <div class="lbl">Left unanswered</div>
+        <div class="lbl">@T.LeftUnanswered</div>
     </div>
     <div class="score-tile">
         <div class="val">@Elapsed</div>
-        <div class="lbl">Time used</div>
+        <div class="lbl">@T.TimeUsed</div>
     </div>
     @if (Session.IsPractice)
     {
@@ -51,7 +51,7 @@
     }
 </div>
 
-<h2>Performance by skills area</h2>
+<h2>@T.PerformanceByArea</h2>
 
 <p>
     The bars below show how you performed in each area of the skills outline.
@@ -93,15 +93,17 @@
 
 <div class="score-actions">
     <FluentButton Appearance="Appearance.Accent" OnClick="OnReview">
-        Review answers and explanations
+        @T.ReviewAnswers
     </FluentButton>
     <FluentButton Appearance="Appearance.Neutral" OnClick="OnRestart">
-        Choose another exam
+        @T.ChooseAnother
     </FluentButton>
 </div>
 
 @code {
     [Parameter, EditorRequired] public ExamSession Session { get; set; } = default!;
+
+    private Ui T => Ui.For(Session.Course.Language);
     [Parameter] public EventCallback OnRestart { get; set; }
     [Parameter] public EventCallback OnReview { get; set; }
 

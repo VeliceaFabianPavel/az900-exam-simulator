@@ -31,8 +31,11 @@ public static partial class TrainingCatalog
     public static TrainingModule? ById(string id) =>
         Modules.FirstOrDefault(m => m.Id == id);
 
+    /// <summary>Searches every course, so a lesson from any subject resolves to its module.</summary>
     public static TrainingModule? ModuleOf(Lesson lesson) =>
-        Modules.FirstOrDefault(m => m.Lessons.Contains(lesson));
+        CourseCatalog.All
+            .SelectMany(c => c.Modules)
+            .FirstOrDefault(m => m.Lessons.Contains(lesson));
 
     /// <summary>
     /// Bank questions that practise a lesson, matched on the skills-outline bullet both sides
@@ -55,7 +58,7 @@ public static partial class TrainingCatalog
     /// </remarks>
     public static IReadOnlyList<Lesson> LessonsFor(Item item) =>
     [
-        .. AllLessons
+        .. CourseCatalog.All.SelectMany(c => c.Modules).SelectMany(m => m.Lessons)
             .Where(l => l.Objective == item.Objective)
             .Select(l => (Lesson: l, Score: Relevance(item, l)))
             .OrderByDescending(x => x.Score)

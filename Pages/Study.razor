@@ -3,6 +3,7 @@
 @implements IDisposable
 @inject TrainingProgress Progress
 @inject NavigationManager Nav
+@inject CourseState Courses
 
 <PageTitle>Study guide</PageTitle>
 
@@ -11,17 +12,17 @@
     <header class="study-header">
         <button type="button" class="study-back" @onclick="BackOrExit">
             <AppIcon Name="chevron-left" Size="18" />
-            <span>@(Progress.CurrentModule is null ? "Exams" : "All modules")</span>
+            <span>@(Progress.CurrentModule is null ? T.Exams : T.AllModules)</span>
         </button>
 
         <div class="study-title">
-            <span class="study-ttl">Study guide</span>
-            <span class="study-sub">Exam AZ-900: Microsoft Azure Fundamentals</span>
+            <span class="study-ttl">@T.StudyGuide</span>
+            <span class="study-sub">@Course.Name: @Course.Subtitle</span>
         </div>
 
         <div class="study-progress">
             <span class="study-progress-lbl">
-                @Progress.ReadCount of @Progress.TotalLessons lessons read
+                @string.Format(T.LessonsRead, Progress.ReadCount, Progress.TotalLessons)
             </span>
             <FluentProgress Value="@((int)Progress.PercentRead)" Max="100" />
         </div>
@@ -66,6 +67,7 @@
                 {
                     <LessonView Module="current"
                                 Lesson="lesson"
+                                T="T"
                                 IsRead="Progress.IsRead(lesson)"
                                 HasPrevious="@(Index(current, lesson) > 0)"
                                 HasNext="@(Index(current, lesson) < current.LessonCount - 1)"
@@ -76,7 +78,7 @@
                 else
                 {
                     <FluentMessageBar Intent="MessageIntent.Info" AllowDismiss="false">
-                        Select a lesson to begin.
+                        @T.SelectALesson
                     </FluentMessageBar>
                 }
             </section>
@@ -87,17 +89,33 @@
         @* ---------------------------------------------------- module overview *@
         <main class="study-main">
             <div class="study-intro">
-                <h1 class="study-h1">Work through the material</h1>
+                <h1 class="study-h1">
+                    @(Course.Language == "ro" ? "Parcurge materialul" : "Work through the material")
+                </h1>
                 <p>
-                    Seven modules, one per in-scope chapter of the study guide, covering the same
-                    ground as the @QuestionBank.All.Count questions in the practice bank. Each
-                    lesson lists what to know, the distinctions the exam turns on, and the pages
-                    the material was written against.
+                    @if (Course.Language == "ro")
+                    {
+                        <text>
+                            @Course.Modules.Count module, cate unul pentru fiecare capitol din
+                            carte, acoperind acelasi material ca cele @Course.Questions.Count
+                            intrebari din banca de exersare. Fiecare lectie arata ce trebuie stiut,
+                            unde se greseste de obicei si paginile pe care a fost scrisa.
+                        </text>
+                    }
+                    else
+                    {
+                        <text>
+                            @Course.Modules.Count modules, one per in-scope chapter of the study
+                            guide, covering the same ground as the @Course.Questions.Count questions
+                            in the practice bank. Each lesson lists what to know, the distinctions
+                            the exam turns on, and the pages the material was written against.
+                        </text>
+                    }
                 </p>
             </div>
 
             <div class="module-grid">
-                @foreach (var m in TrainingCatalog.Modules)
+                @foreach (var m in Course.Modules)
                 {
                     var module = m;
                     var read = Progress.ReadCountIn(module);
@@ -126,14 +144,15 @@
                         <div class="module-bar">
                             <FluentProgress Value="@Percent(read, module.LessonCount)" Max="100" />
                             <span class="module-count">
-                                @read of @module.LessonCount lessons &middot;
-                                @TrainingCatalog.QuestionsFor(module).Count questions
+                                @read / @module.LessonCount @T.Lessons &middot;
+                                @Course.Questions.Count(q => q.Reference == module.Reference)
+                                @T.QuestionsWord
                             </span>
                         </div>
 
                         <FluentButton Appearance="Appearance.Accent"
                                       OnClick="() => Progress.Open(module)">
-                            @(read == 0 ? "Start module" : done ? "Review module" : "Continue")
+                            @(read == 0 ? T.StartModule : done ? T.ReviewModule : T.ContinueModule)
                         </FluentButton>
                     </FluentCard>
                 }
@@ -143,7 +162,15 @@
 </div>
 
 @code {
-    protected override void OnInitialized() => Progress.Changed += OnChanged;
+    private Course Course => Courses.Current;
+
+    private Ui T => Ui.For(Course.Language);
+
+    protected override void OnInitialized()
+    {
+        Progress.Changed += OnChanged;
+        Progress.UseCourse(Courses.Current);
+    }
 
     public void Dispose() => Progress.Changed -= OnChanged;
 

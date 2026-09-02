@@ -84,6 +84,7 @@ public sealed record DomainResult(ExamDomain Domain, int Correct, int Total)
 /// </summary>
 public sealed class ExamSession
 {
+    /// <summary>AZ-900 default, kept for screens that quote a figure before a course is chosen.</summary>
     public const int DurationMinutes = 45;
 
     /// <summary>Scaled score required to pass, on the Microsoft 1-1000 scale.</summary>
@@ -112,7 +113,16 @@ public sealed class ExamSession
     /// the candidate, so the shortcut back only appears after they have been.
     /// </summary>
     public bool HasSeenReview { get; private set; }
-    public ExamForm Form { get; private set; } = ExamCatalog.Forms[0];
+    public ExamForm Form { get; private set; } = ExamCatalog.Az900Forms[0];
+
+    /// <summary>The subject being delivered. Supplies the domains, timing and pass mark.</summary>
+    public Course Course { get; private set; } = CourseCatalog.Default;
+
+    /// <summary>Countdown length for this course.</summary>
+    public int Minutes => Course.DurationMinutes;
+
+    /// <summary>Scaled score needed to pass this course.</summary>
+    public int Pass => Course.PassMark;
 
     /// <summary>Delivery mode for the current attempt. Set by <see cref="SelectForm"/>.</summary>
     public ExamMode Mode { get; private set; } = ExamMode.Exam;
@@ -144,8 +154,13 @@ public sealed class ExamSession
         IsPractice && CheckAfterEach && Screen == ExamScreen.Item && Current.Item.Scored;
 
     /// <summary>Loads a form in the given mode and returns the session to its pre-exam state.</summary>
-    public void SelectForm(ExamForm form, ExamMode mode = ExamMode.Exam)
+    public void SelectForm(ExamForm form, ExamMode mode = ExamMode.Exam) =>
+        SelectForm(CourseCatalog.Default, form, mode);
+
+    /// <summary>Loads a form of a course in the given mode and resets to the pre-exam state.</summary>
+    public void SelectForm(Course course, ExamForm form, ExamMode mode)
     {
+        Course = course;
         Form = form;
         Mode = mode;
         _states.Clear();
@@ -158,7 +173,7 @@ public sealed class ExamSession
         _endedAt = null;
 
         var seq = 0;
-        foreach (var item in ExamCatalog.Build(form))
+        foreach (var item in ExamCatalog.Build(Course, form))
         {
             seq++;
             Pages.Add(new Page
@@ -417,7 +432,7 @@ public sealed class ExamSession
     {
         get
         {
-            var left = TimeSpan.FromMinutes(DurationMinutes) - Elapsed;
+            var left = TimeSpan.FromMinutes(Minutes) - Elapsed;
             return left < TimeSpan.Zero ? TimeSpan.Zero : left;
         }
     }
@@ -482,14 +497,14 @@ public sealed class ExamSession
     /// </summary>
     public int ScaledScore => (int)Math.Round(PercentCorrect * 10);
 
-    public bool Passed => ScaledScore >= PassMark;
+    public bool Passed => ScaledScore >= Pass;
 
     public IReadOnlyList<DomainResult> DomainResults()
     {
         var results = Results();
         return
         [
-            .. ExamDomainInfo.All.Select(d =>
+            .. Course.Domains.Select(d =>
             {
                 var subset = results.Where(r => r.Item.Domain == d).ToList();
                 return new DomainResult(d, subset.Count(r => r.Correct), subset.Count);

@@ -11,17 +11,17 @@
             <span class="fb-ttl">@Headline</span>
             <span class="fb-sub">@Subline</span>
         </div>
-        <FluentBadge Appearance="Appearance.Neutral">Question @Number</FluentBadge>
+        <FluentBadge Appearance="Appearance.Neutral">@T.Question @Number</FluentBadge>
     </div>
 
     <div class="fb-stem">@((MarkupString)Item.Stem)</div>
 
     <div class="fb-answers">
         <div class="answer-block given @(Correct ? "ok" : "no")">
-            <h4>Your answer</h4>
+            <h4>@T.YourAnswer</h4>
             @if (Given.Count == 0)
             {
-                <p class="muted">You did not answer this one.</p>
+                <p class="muted">@T.NotAnswered</p>
             }
             else
             {
@@ -32,25 +32,25 @@
         @if (!Correct)
         {
             <div class="answer-block keyed">
-                <h4>Correct answer</h4>
+                <h4>@T.CorrectAnswer</h4>
                 <ul>@foreach (var e in Expected) { <li>@e</li> }</ul>
             </div>
         }
     </div>
 
     <div class="fb-why">
-        <h4>@(Correct ? "Why that is right" : "Why")</h4>
+        <h4>@(Correct ? T.WhyThatIsRight : T.Why)</h4>
         @((MarkupString)Item.Explanation)
     </div>
 
-    <SourceLinks Item="Item" OnOpen="OnOpenLesson" />
+    <SourceLinks Item="Item" T="T" OnOpen="OnOpenLesson" />
 
     <div class="fb-actions">
         <FluentButton Appearance="Appearance.Neutral" OnClick="OnBack">
             <AppIcon Name="chevron-left" Size="16" />
-            <span style="margin-left:6px">Change my answer</span>
+            <span style="margin-left:6px">@T.ChangeMyAnswer</span>
         </FluentButton>
-        <span class="fb-hint">Use <strong>@NextLabel</strong> below to carry on.</span>
+        <span class="fb-hint">@string.Format(T.UseNextBelow, NextLabel)</span>
     </div>
 </div>
 
@@ -63,6 +63,8 @@
     [Parameter] public EventCallback OnBack { get; set; }
     [Parameter] public EventCallback<Lesson> OnOpenLesson { get; set; }
 
+    [Parameter] public Ui T { get; set; } = Ui.En;
+
     private bool Correct => Answered && Item.IsCorrect(Response);
 
     private IReadOnlyList<string> Given => Item.ResponseLines(Response);
@@ -72,12 +74,10 @@
     private string Tone => Correct ? "ok" : Answered ? "no" : "skip";
 
     private string Headline => Correct
-        ? "That is correct"
-        : Answered ? "That is not right" : "You skipped this one";
+        ? T.ThatIsCorrect
+        : Answered ? T.ThatIsNotRight : T.YouSkipped;
 
     private string Subline => Correct
-        ? "Here is why, so you can be sure it was not a lucky guess."
-        : Answered
-            ? "Read why, then go back and change it if you want to."
-            : "The keyed answer and the reasoning are below.";
+        ? T.CorrectSub
+        : Answered ? T.WrongSub : T.SkippedSub;
 }

@@ -11,5 +11,6 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddFluentUIComponents();
 builder.Services.AddScoped<ExamSession>();
 builder.Services.AddScoped<TrainingProgress>();
+builder.Services.AddScoped<CourseState>();
 
 await builder.Build().RunAsync();

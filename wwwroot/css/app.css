@@ -3444,3 +3444,93 @@ fluent-dialog .fluent-dialog-footer {
         padding: 10px 0 !important;
     }
 }
+
+/* ==================================================================== *
+ *  Course picker                                                       *
+ * ==================================================================== */
+
+.course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.course-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+}
+
+.course-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.course-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--accent-fill-rest);
+    color: var(--foreground-on-accent-rest);
+}
+
+.course-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.course-name {
+    font-size: var(--type-ramp-plus-2-font-size);
+    font-weight: 600;
+}
+
+.course-sub {
+    font-size: var(--type-ramp-minus-1-font-size);
+    color: var(--neutral-foreground-hint);
+}
+
+.course-head > :last-child {
+    margin-left: auto;
+    flex: 0 0 auto;
+}
+
+.course-blurb {
+    margin: 0;
+    color: var(--neutral-foreground-hint);
+}
+
+.course-facts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 14px;
+    font-size: var(--type-ramp-minus-1-font-size);
+    flex: 1 1 auto;
+}
+
+.course-facts li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+@media (max-width: 720px) {
+    .course-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .course-facts {
+        grid-template-columns: 1fr;
+    }
+}

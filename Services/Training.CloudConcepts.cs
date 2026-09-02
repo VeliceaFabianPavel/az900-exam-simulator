@@ -12,7 +12,7 @@ public static partial class TrainingCatalog
     {
         Id = "m1",
         Title = "Cloud concepts",
-        Domain = ExamDomain.CloudConcepts,
+        Domain = AzureDomains.CloudConcepts,
         Reference = M1,
         Pages = "ch. 1, p56-89",
         Blurb = "What the cloud is, what it costs, what it promises, and who is responsible "

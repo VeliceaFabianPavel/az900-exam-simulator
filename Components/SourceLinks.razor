@@ -6,7 +6,7 @@
     <div class="source-links">
         <span class="source-lbl">
             <AppIcon Name="book" Size="16" />
-            <span>Read the source</span>
+            <span>@T.ReadTheSource</span>
         </span>
 
         <span class="source-list">
@@ -30,6 +30,8 @@
 
     /// <summary>Raised with the lesson the reader picked, so the host can open the dialog.</summary>
     [Parameter] public EventCallback<Lesson> OnOpen { get; set; }
+
+    [Parameter] public Ui T { get; set; } = Ui.En;
 
     /// <summary>At most two, most relevant first, so the panel does not become a menu.</summary>
     private IReadOnlyList<Lesson> Lessons =>

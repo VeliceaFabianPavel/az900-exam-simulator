@@ -4,8 +4,8 @@
 
 <p class="instruction">
     @(Item.SelectCount == 1
-        ? "Select the best answer."
-        : $"Select {Item.SelectCount} answers.")
+        ? T.SelectBest
+        : string.Format(T.SelectN, Item.SelectCount))
 </p>
 
 <div class="choice-list" role="@(Item.SelectCount == 1 ? "radiogroup" : "group")">
@@ -28,6 +28,8 @@
     [Parameter, EditorRequired] public MultipleChoiceItem Item { get; set; } = default!;
     [Parameter, EditorRequired] public Response Response { get; set; } = default!;
     [Parameter] public EventCallback<Response> ResponseChanged { get; set; }
+
+    [Parameter] public Ui T { get; set; } = Ui.En;
 
     private async Task Toggle(string key)
     {

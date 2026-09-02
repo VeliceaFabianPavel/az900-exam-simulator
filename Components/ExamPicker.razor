@@ -4,12 +4,17 @@
 
 <div class="pre-card pick">
     <div class="pre-body">
-        <h1 class="pre-ttl">Choose a practice exam</h1>
-        <h2 class="pre-sub">Exam AZ-900: Microsoft Azure Fundamentals</h2>
+        <button type="button" class="study-back" @onclick="() => OnChangeCourse.InvokeAsync()">
+            <AppIcon Name="chevron-left" Size="18" />
+            <span>@(Course.Language == "ro" ? "Alt curs" : "Other courses")</span>
+        </button>
+
+        <h1 class="pre-ttl">@T.ChooseExam</h1>
+        <h2 class="pre-sub">@Course.Name: @Course.Subtitle</h2>
 
         <p>
-            Each form draws @ExamCatalog.QuestionCount questions from a bank of
-            @QuestionBank.All.Count items, stratified to match the published skills
+            Each form draws @Course.QuestionsPerForm questions from a bank of
+            @Course.Questions.Count items, stratified to match the published skills
             outline. Questions and answer options are reshuffled on every attempt.
         </p>
 
@@ -17,18 +22,18 @@
         <button type="button" class="study-cta" @onclick="@(() => Nav.NavigateTo("study"))">
             <span class="study-cta-icon"><AppIcon Name="book" Size="20" /></span>
             <span class="study-cta-txt">
-                <span class="study-cta-ttl">Not ready to sit one yet?</span>
+                <span class="study-cta-ttl">@T.StudyCtaTitle</span>
                 <span class="study-cta-sub">
-                    Work through the study guide first &mdash;
-                    @TrainingCatalog.AllLessons.Count lessons across
-                    @TrainingCatalog.Modules.Count modules.
+                    @Course.Modules.Sum(m => m.LessonCount) @T.Lessons &middot;
+                    @Course.Modules.Count
+                    @(Course.Language == "ro" ? "module" : "modules")
                 </span>
             </span>
             <AppIcon Name="chevron-right" Size="18" />
         </button>
 
         @* ------------------------------------------------------ step 1: mode *@
-        <h3 class="pick-step">Step 1 &middot; How do you want to sit it?</h3>
+        <h3 class="pick-step">@T.StepMode</h3>
 
         <div class="mode-grid" role="radiogroup" aria-label="Delivery mode">
             @foreach (var m in ExamModeInfo.All)
@@ -43,8 +48,8 @@
                             <AppIcon Name="@(mode == ExamMode.Practice ? "bulb" : "timer")" Size="20" />
                         </span>
                         <span class="mode-titles">
-                            <span class="mode-name">@mode.Name() mode</span>
-                            <span class="mode-tag">@mode.Tagline()</span>
+                            <span class="mode-name">@T.ModeName(mode)</span>
+                            <span class="mode-tag">@T.ModeTagline(mode)</span>
                         </span>
                         <span class="mode-check" aria-hidden="true">
                             @if (on)
@@ -56,7 +61,7 @@
 
                     @* Spans rather than a list: a button may only contain phrasing content. *@
                     <span class="mode-points">
-                        @foreach (var point in mode.Points())
+                        @foreach (var point in T.ModePoints(mode))
                         {
                             <span class="mode-point">@point</span>
                         }
@@ -66,21 +71,21 @@
         </div>
 
         @* ------------------------------------------------------ step 2: form *@
-        <h3 class="pick-step">Step 2 &middot; Pick a form</h3>
+        <h3 class="pick-step">@T.StepForm</h3>
 
         <ul class="pre-facts compact">
             <li>
                 <AppIcon Name="@(_mode == ExamMode.Practice ? "infinity" : "timer")" Size="22" />
                 <span>
-                    Exam Time:
-                    <b>@(_mode == ExamMode.Practice ? "No limit" : $"{ExamSession.DurationMinutes} minutes")</b>
+                    @T.ExamTime
+                    <b>@(_mode == ExamMode.Practice ? T.NoLimit : $"{Course.DurationMinutes} {T.Minutes}")</b>
                 </span>
             </li>
             <li>
                 <AppIcon Name="award" Size="22" />
-                <span>Pass mark: <b>@ExamSession.PassMark</b> of 1000</span>
+                <span>@T.PassMark <b>@Course.PassMark</b> of 1000</span>
             </li>
-            @foreach (var d in ExamDomainInfo.All)
+            @foreach (var d in Course.Domains)
             {
                 <li>
                     <AppIcon Name="doc" Size="22" />
@@ -90,7 +95,7 @@
         </ul>
 
         <div class="form-grid">
-            @foreach (var f in ExamCatalog.Forms)
+            @foreach (var f in Course.FormsFor(_mode))
             {
                 var form = f;
                 <button type="button" class="form-tile @(_mode == ExamMode.Practice ? "practice" : "")"
@@ -98,10 +103,10 @@
                     <span class="form-no">@form.Number</span>
                     <span class="form-name">@form.Title</span>
                     <span class="form-meta">
-                        @ExamCatalog.QuestionCount questions &middot;
-                        @(_mode == ExamMode.Practice ? "untimed" : $"{ExamSession.DurationMinutes} min")
+                        @Course.QuestionsPerForm @T.QuestionsWord &middot;
+                        @(_mode == ExamMode.Practice ? T.Untimed : $"{Course.DurationMinutes} min")
                     </span>
-                    <span class="form-mode">@_mode.Name()</span>
+                    <span class="form-mode">@T.ModeName(_mode)</span>
                 </button>
             }
         </div>
@@ -109,6 +114,12 @@
 </div>
 
 @code {
+    [Parameter] public Course Course { get; set; } = CourseCatalog.Default;
+
+    [Parameter] public EventCallback OnChangeCourse { get; set; }
+
+    private Ui T => Ui.For(Course.Language);
+
     [Parameter] public EventCallback<ExamStart> OnSelect { get; set; }
 
     private ExamMode _mode = ExamMode.Practice;

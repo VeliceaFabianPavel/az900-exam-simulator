@@ -7,7 +7,7 @@
         break;
 
     case MultipleChoiceItem mc:
-        <MultipleChoiceView Item="mc" Response="Response" ResponseChanged="ResponseChanged" />
+        <MultipleChoiceView Item="mc" Response="Response" T="T" ResponseChanged="ResponseChanged" />
         break;
 
     case BuildListItem bl:
@@ -35,4 +35,6 @@
     [Parameter, EditorRequired] public Item Item { get; set; } = default!;
     [Parameter, EditorRequired] public Response Response { get; set; } = default!;
     [Parameter] public EventCallback<Response> ResponseChanged { get; set; }
+
+    [Parameter] public Ui T { get; set; } = Ui.En;
 }

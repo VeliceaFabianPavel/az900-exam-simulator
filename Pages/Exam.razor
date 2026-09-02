@@ -2,6 +2,8 @@
 @using MockExam.Fluent.Models
 @implements IDisposable
 @inject ExamSession Session
+@inject CourseState Courses
+@inject TrainingProgress Training
 
 <PageTitle>Practice Exam</PageTitle>
 
@@ -18,7 +20,7 @@
             {
                 <div class="pre-time">
                     <div class="hdr-block-top">
-                        <span class="hdr-legend">@Session.ClockLegend</span>
+                        <span class="hdr-legend">@(Session.IsPractice ? T.TimeElapsed : T.TimeRemaining)</span>
                         <FluentSwitch @bind-Value="_showTime" aria-label="Show the clock" />
                     </div>
                     @if (_showTime)
@@ -30,9 +32,14 @@
         </header>
 
         <main class="pre-main">
-            @if (Session.Screen == ExamScreen.Pick)
+            @if (Session.Screen == ExamScreen.Pick && !Courses.Chosen)
             {
-                <ExamPicker OnSelect="StartExam" />
+                <CoursePicker OnSelect="PickCourse" />
+            }
+            else if (Session.Screen == ExamScreen.Pick)
+            {
+                <ExamPicker Course="Courses.Current" OnSelect="StartExam"
+                            OnChangeCourse="() => Courses.Clear()" />
             }
             else if (Session.Screen == ExamScreen.Agreement)
             {
@@ -48,7 +55,7 @@
             @if (Session.Screen is ExamScreen.Summary or ExamScreen.Ready)
             {
                 <button type="button" class="pre-btn wide" @onclick="Session.Next">
-                    <span>@(Session.Screen == ExamScreen.Ready ? "Start Exam" : "Next")</span>
+                    <span>@(Session.Screen == ExamScreen.Ready ? T.StartExam : T.Next)</span>
                     <AppIcon Name="chevron-right" Size="16" />
                 </button>
             }
@@ -110,7 +117,7 @@ else
                     {
                         <span class="mode-badge" title="Untimed practice with hints and answers">
                             <AppIcon Name="bulb" Size="12" />
-                            <span>Practice</span>
+                            <span>@T.PracticeModeName</span>
                         </span>
                     }
                 </span>
@@ -140,7 +147,7 @@ else
 
             <div class="hdr-block right">
                 <div class="hdr-block-top">
-                    <span class="hdr-legend">@Session.ClockLegend</span>
+                    <span class="hdr-legend">@(Session.IsPractice ? T.TimeElapsed : T.TimeRemaining)</span>
                     <FluentSwitch @bind-Value="_showTime" aria-label="Show the clock" />
                 </div>
                 @if (_showTime)
@@ -176,6 +183,7 @@ else
                                   Number="@(Session.Current.Seq ?? 0)"
                                   Answered="@Session.IsComplete(Session.Current)"
                                   NextLabel="@NextLabel"
+                                  T="T"
                                   OnBack="Session.Previous"
                                   OnOpenLesson="OpenLesson" />
                 }
@@ -183,12 +191,14 @@ else
                 {
                     <ItemBody Item="Session.Current.Item"
                               Response="Session.CurrentState.Response"
+                              T="T"
                               ResponseChanged="SaveResponse" />
 
                     @if (Session.IsPractice && Session.Current.Item.Scored)
                     {
                         <AssistPanel Item="Session.Current.Item"
                                      State="Session.CurrentState"
+                                     T="T"
                                      OnToggleHint="ToggleHint"
                                      OnToggleHelp="ToggleHelp"
                                      OnOpenLesson="OpenLesson" />
@@ -207,14 +217,14 @@ else
                                   Disabled="@Session.CurrentState.Response.IsEmpty"
                                   OnClick="ResetAnswer">
                         <AppIcon Name="reset" Size="16" />
-                        <span style="margin-left:6px">Reset answer</span>
+                        <span style="margin-left:6px">@T.ResetAnswer</span>
                     </FluentButton>
 
                     <FluentCheckbox Value="@Session.CurrentState.Marked"
-                                    ValueChanged="ToggleMark" Label="Review later" />
+                                    ValueChanged="ToggleMark" Label="@T.ReviewLater" />
 
                     <FluentCheckbox Value="@Session.CurrentState.Feedback"
-                                    ValueChanged="ToggleFeedback" Label="Leave feedback" />
+                                    ValueChanged="ToggleFeedback" Label="@T.LeaveFeedback" />
                 </div>
             }
 
@@ -223,12 +233,12 @@ else
                 <div class="footer-assist">
                     <FluentButton Appearance="Appearance.Neutral" OnClick="ToggleHint">
                         <AppIcon Name="bulb" Size="16" />
-                        <span style="margin-left:6px">@(Session.CurrentState.HintOpen ? "Hide hint" : "Hint")</span>
+                        <span style="margin-left:6px">@(Session.CurrentState.HintOpen ? T.HideHint : T.Hint)</span>
                     </FluentButton>
 
                     <FluentButton Appearance="Appearance.Neutral" OnClick="ToggleHelp">
                         <AppIcon Name="@(Session.CurrentState.HelpOpen ? "eye-off" : "eye")" Size="16" />
-                        <span style="margin-left:6px">@(Session.CurrentState.HelpOpen ? "Hide answer" : "Show answer")</span>
+                        <span style="margin-left:6px">@(Session.CurrentState.HelpOpen ? T.HideAnswer : T.ShowAnswer)</span>
                     </FluentButton>
                 </div>
             }
@@ -238,7 +248,7 @@ else
                               Disabled="@(!Session.CanGoPrevious)"
                               OnClick="Session.Previous">
                     <AppIcon Name="chevron-left" Size="16" />
-                    <span style="margin-left:6px">Previous</span>
+                    <span style="margin-left:6px">@T.Previous</span>
                 </FluentButton>
 
                 <FluentButton Appearance="Appearance.Accent"
@@ -256,7 +266,7 @@ else
                                   Title="Back to the review panel"
                                   OnClick="Session.ShowReview">
                         <AppIcon Name="list" Size="16" />
-                        <span class="btn-label" style="margin-left:6px">Back to review</span>
+                        <span class="btn-label" style="margin-left:6px">@T.BackToReview</span>
                     </FluentButton>
                 }
 
@@ -378,6 +388,9 @@ else
 
     [CascadingParameter] private MainLayout? Layout { get; set; }
 
+    /// <summary>Strings for the language of the course being delivered.</summary>
+    private Ui T => Ui.For(Session.Course.Language);
+
     private static readonly (string Label, DesignThemeModes Value)[] Modes =
     [
         ("System", DesignThemeModes.System),
@@ -450,7 +463,14 @@ else
         _schemeOpen = false;
     }
 
-    private void StartExam(ExamStart start) => Session.SelectForm(start.Form, start.Mode);
+    private void PickCourse(Course course)
+    {
+        Courses.Select(course);
+        Training.UseCourse(course);
+    }
+
+    private void StartExam(ExamStart start) =>
+        Session.SelectForm(Courses.Current, start.Form, start.Mode);
 
     private Task SaveResponse(Response response)
     {
@@ -489,11 +509,11 @@ else
 
     private string HeaderTitle => Session.Screen switch
     {
-        ExamScreen.Feedback => $"Question {Session.Current.Seq} · result",
-        ExamScreen.Review => "Review",
-        ExamScreen.Score => "Score report",
-        ExamScreen.Report => "Answer review",
-        _ => Session.Current.Seq is int s ? $"Question {s}" : "Introduction"
+        ExamScreen.Feedback => $"{T.Question} {Session.Current.Seq} · {T.Result}",
+        ExamScreen.Review => T.Review,
+        ExamScreen.Score => T.ScoreReport,
+        ExamScreen.Report => T.AnswerReview,
+        _ => Session.Current.Seq is int s ? $"{T.Question} {s}" : "Introduction"
     };
 
     private string HeaderSubtitle => Session.Screen switch
@@ -506,11 +526,11 @@ else
 
     private string NextLabel => Session.Screen switch
     {
-        ExamScreen.Review => Session.IsPractice ? "Finish and score" : "End exam",
+        ExamScreen.Review => Session.IsPractice ? T.FinishAndScore : T.EndExam,
         ExamScreen.Feedback => Session.Index >= Session.Pages.Count - 1
-            ? "Review"
-            : "Next question",
-        _ => Session.Index >= Session.Pages.Count - 1 ? "Review" : "Next"
+            ? T.Review
+            : T.NextQuestion,
+        _ => Session.Index >= Session.Pages.Count - 1 ? T.Review : T.Next
     };
 
     /// <summary>Counts down in Exam mode and up in Practice mode.</summary>
