@@ -5,7 +5,7 @@ namespace MockExam.Fluent.Services;
 // Domain 2 of the AZ-900 skills outline: "Describe Azure architecture and services" (35-40%).
 public static partial class QuestionBank
 {
-    private const ExamDomain D2 = ExamDomain.ArchitectureAndServices;
+    private static readonly ExamDomain D2 = AzureDomains.ArchitectureAndServices;
 
     private static IEnumerable<Item> ArchitectureAndServices()
     {

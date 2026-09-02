@@ -13,7 +13,7 @@ public static partial class TrainingCatalog
     {
         Id = "m4",
         Title = "Identity, access and security",
-        Domain = ExamDomain.ArchitectureAndServices,
+        Domain = AzureDomains.ArchitectureAndServices,
         Reference = M4,
         Pages = "ch. 5, p186-232",
         Blurb = "Who a user is, what they are allowed to do, and the models and tools Azure "

@@ -12,52 +12,50 @@ public enum ItemType
 }
 
 /// <summary>
-/// The three scored areas of the AZ-900 skills outline. Weightings follow the
-/// published exam blueprint and drive how each practice form is assembled.
+/// One scored area of a course. Courses define their own set: AZ-900 uses the three areas of
+/// the published skills outline, a book-based course uses one area per chapter.
 /// </summary>
-public enum ExamDomain
-{
-    /// <summary>Describe cloud concepts (25-30%).</summary>
-    CloudConcepts,
-    /// <summary>Describe Azure architecture and services (35-40%).</summary>
-    ArchitectureAndServices,
-    /// <summary>Describe Azure management and governance (30-35%).</summary>
-    ManagementAndGovernance
-}
+/// <param name="Key">Stable identifier, used for ordering and lookups.</param>
+/// <param name="Title">Full name, shown on the score report.</param>
+/// <param name="Short">Compact name, shown next to a question.</param>
+/// <param name="PerForm">How many questions of this area go into one assembled form.</param>
+/// <param name="Weight">Human-readable share of the exam, for example "25-30%".</param>
+public sealed record ExamDomain(
+    string Key,
+    string Title,
+    string Short,
+    int PerForm,
+    string Weight);
 
+/// <summary>
+/// Reads a domain's fields. These stay methods rather than becoming plain property access so
+/// that every existing call site keeps working unchanged.
+/// </summary>
 public static class ExamDomainInfo
 {
-    public static string Name(this ExamDomain d) => d switch
-    {
-        ExamDomain.CloudConcepts => "Describe cloud concepts",
-        ExamDomain.ArchitectureAndServices => "Describe Azure architecture and services",
-        _ => "Describe Azure management and governance"
-    };
+    public static string Name(this ExamDomain d) => d.Title;
 
-    public static string ShortName(this ExamDomain d) => d switch
-    {
-        ExamDomain.CloudConcepts => "Cloud concepts",
-        ExamDomain.ArchitectureAndServices => "Architecture and services",
-        _ => "Management and governance"
-    };
+    public static string ShortName(this ExamDomain d) => d.Short;
 
-    /// <summary>Share of a 50-item form, matching the published blueprint weighting.</summary>
-    public static int ItemsPerForm(this ExamDomain d) => d switch
-    {
-        ExamDomain.CloudConcepts => 14,
-        ExamDomain.ArchitectureAndServices => 19,
-        _ => 17
-    };
+    public static int ItemsPerForm(this ExamDomain d) => d.PerForm;
 
-    public static string Weighting(this ExamDomain d) => d switch
-    {
-        ExamDomain.CloudConcepts => "25-30%",
-        ExamDomain.ArchitectureAndServices => "35-40%",
-        _ => "30-35%"
-    };
+    public static string Weighting(this ExamDomain d) => d.Weight;
+}
+
+/// <summary>The three scored areas of the AZ-900 skills outline, weighted to the blueprint.</summary>
+public static class AzureDomains
+{
+    public static readonly ExamDomain CloudConcepts = new(
+        "az-1", "Describe cloud concepts", "Cloud concepts", 14, "25-30%");
+
+    public static readonly ExamDomain ArchitectureAndServices = new(
+        "az-2", "Describe Azure architecture and services", "Architecture and services", 19, "35-40%");
+
+    public static readonly ExamDomain ManagementAndGovernance = new(
+        "az-3", "Describe Azure management and governance", "Management and governance", 17, "30-35%");
 
     public static readonly ExamDomain[] All =
-        [ExamDomain.CloudConcepts, ExamDomain.ArchitectureAndServices, ExamDomain.ManagementAndGovernance];
+        [CloudConcepts, ArchitectureAndServices, ManagementAndGovernance];
 }
 
 /// <summary>An exhibit tab rendered above or beside the question stem.</summary>
@@ -73,7 +71,7 @@ public abstract class Item
     /// <summary>Items that carry no response (intro screens).</summary>
     public virtual bool Scored => true;
 
-    public ExamDomain Domain { get; init; }
+    public required ExamDomain Domain { get; init; }
 
     /// <summary>The skills-outline bullet this item maps to, shown on the score report.</summary>
     public string Objective { get; init; } = "";

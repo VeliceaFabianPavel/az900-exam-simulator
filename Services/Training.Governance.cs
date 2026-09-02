@@ -12,7 +12,7 @@ public static partial class TrainingCatalog
     {
         Id = "m5",
         Title = "Governance, monitoring and compliance",
-        Domain = ExamDomain.ManagementAndGovernance,
+        Domain = AzureDomains.ManagementAndGovernance,
         Reference = M5,
         Pages = "ch. 6, p233-261",
         Blurb = "Enforcing standards on what gets deployed, watching what it does, and "

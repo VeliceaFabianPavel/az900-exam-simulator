@@ -12,7 +12,7 @@ public static partial class TrainingCatalog
     {
         Id = "m3",
         Title = "Storage and migration",
-        Domain = ExamDomain.ArchitectureAndServices,
+        Domain = AzureDomains.ArchitectureAndServices,
         Reference = M3,
         Pages = "ch. 3, p134-162",
         Blurb = "The storage services, how many copies Azure keeps and where, and how to get "

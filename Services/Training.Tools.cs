@@ -13,7 +13,7 @@ public static partial class TrainingCatalog
     {
         Id = "m7",
         Title = "Managing Azure resources",
-        Domain = ExamDomain.ManagementAndGovernance,
+        Domain = AzureDomains.ManagementAndGovernance,
         Reference = M7,
         Pages = "ch. 8, p289-345",
         Blurb = "The tools for deploying and managing resources, and how to pick the right one "

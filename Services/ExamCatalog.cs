@@ -3,7 +3,12 @@ using MockExam.Fluent.Models;
 namespace MockExam.Fluent.Services;
 
 /// <summary>One of the ten practice forms. The seed fixes which bank items the form draws.</summary>
-public sealed record ExamForm(int Number, string Title, string Focus, int Seed);
+/// <param name="OnlyMode">
+/// Restricts the form to one delivery mode. Null means it can be sat either way, which is how
+/// the AZ-900 forms work; a course can instead publish separate practice and exam forms.
+/// </param>
+public sealed record ExamForm(
+    int Number, string Title, string Focus, int Seed, ExamMode? OnlyMode = null);
 
 /// <summary>What the picker screen hands back: a form plus the mode to deliver it in.</summary>
 public sealed record ExamStart(ExamForm Form, ExamMode Mode);
@@ -15,9 +20,10 @@ public sealed record ExamStart(ExamForm Form, ExamMode Mode);
 /// </summary>
 public static class ExamCatalog
 {
+    /// <summary>Kept for the AZ-900 screens that still quote a fixed figure.</summary>
     public const int QuestionCount = 50;
 
-    public static IReadOnlyList<ExamForm> Forms { get; } =
+    public static IReadOnlyList<ExamForm> Az900Forms { get; } =
     [
         new(1, "Practice Exam 1", "Full blueprint coverage", 11_001),
         new(2, "Practice Exam 2", "Full blueprint coverage", 11_002),
@@ -31,30 +37,43 @@ public static class ExamCatalog
         new(10, "Practice Exam 10", "Full blueprint coverage", 11_010)
     ];
 
+    /// <summary>
+    /// Formularele cursului de Java: opt teste de exersare si opt examene, fiecare de 20 de
+    /// intrebari. Fiecare formular isi are propriul seed, deci contine mereu aceleasi intrebari,
+    /// prezentate insa in alta ordine la fiecare incercare.
+    /// </summary>
+    public static IReadOnlyList<ExamForm> JavaForms { get; } =
+    [
+        .. Enumerable.Range(1, 8).Select(n => new ExamForm(
+            n, $"Test de exersare {n}", "Capitolele 2-8", 22_000 + n, ExamMode.Practice)),
+        .. Enumerable.Range(1, 8).Select(n => new ExamForm(
+            n + 8, $"Examen {n}", "Capitolele 2-8", 23_000 + n, ExamMode.Exam))
+    ];
+
     public static ExamForm ById(int number) =>
-        Forms.FirstOrDefault(f => f.Number == number) ?? Forms[0];
+        Az900Forms.FirstOrDefault(f => f.Number == number) ?? Az900Forms[0];
 
     /// <summary>
     /// Selects the form's questions, stratified across the three domains using the
     /// published blueprint weighting, then randomises presentation for this attempt.
     /// </summary>
-    public static IReadOnlyList<Item> Build(ExamForm form)
+    public static IReadOnlyList<Item> Build(Course course, ExamForm form)
     {
         var picker = new Random(form.Seed);
         List<Item> selected = [];
 
-        foreach (var domain in ExamDomainInfo.All)
+        foreach (var domain in course.Domains)
         {
-            var pool = QuestionBank.ByDomain(domain);
+            var pool = course.QuestionsIn(domain);
             selected.AddRange(Sample(pool, domain.ItemsPerForm(), picker));
         }
 
         // Top up in the unlikely event a domain pool is short of its quota.
-        if (selected.Count < QuestionCount)
+        if (selected.Count < course.QuestionsPerForm)
         {
             var chosen = selected.Select(i => i.Id).ToHashSet();
-            var rest = QuestionBank.All.Where(i => !chosen.Contains(i.Id)).ToList();
-            selected.AddRange(Sample(rest, QuestionCount - selected.Count, picker));
+            var rest = course.Questions.Where(i => !chosen.Contains(i.Id)).ToList();
+            selected.AddRange(Sample(rest, course.QuestionsPerForm - selected.Count, picker));
         }
 
         // A fresh seed per attempt, so the same form feels different each time.

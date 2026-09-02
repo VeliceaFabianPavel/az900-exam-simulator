@@ -12,7 +12,7 @@ public static partial class TrainingCatalog
     {
         Id = "m6",
         Title = "Pricing, SLAs and lifecycle",
-        Domain = ExamDomain.ManagementAndGovernance,
+        Domain = AzureDomains.ManagementAndGovernance,
         Reference = M6,
         Pages = "ch. 7, p262-288",
         Blurb = "What drives the bill, what reduces it, what Microsoft promises about "

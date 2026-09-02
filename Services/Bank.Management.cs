@@ -5,7 +5,7 @@ namespace MockExam.Fluent.Services;
 // Domain 3 of the AZ-900 skills outline: "Describe Azure management and governance" (30-35%).
 public static partial class QuestionBank
 {
-    private const ExamDomain D3 = ExamDomain.ManagementAndGovernance;
+    private static readonly ExamDomain D3 = AzureDomains.ManagementAndGovernance;
 
     private static IEnumerable<Item> ManagementAndGovernance()
     {

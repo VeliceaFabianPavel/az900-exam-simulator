@@ -10,7 +10,7 @@
 
         <p class="pre-mode @(Session.IsPractice ? "practice" : "timed")">
             <AppIcon Name="@(Session.IsPractice ? "bulb" : "timer")" Size="16" />
-            <span><b>@Session.Mode.Name() mode</b> &middot; @Session.Mode.Tagline()</span>
+            <span><b>@T.ModeName(Session.Mode)</b> &middot; @T.ModeTagline(Session.Mode)</span>
         </p>
 
         @if (Ready)
@@ -52,7 +52,7 @@
                 <AppIcon Name="list" Size="22" />
                 <span>Total Exam Questions: <b>@Session.TotalQuestions</b></span>
             </li>
-            @foreach (var d in ExamDomainInfo.All)
+            @foreach (var d in Session.Course.Domains)
             {
                 <li>
                     <AppIcon Name="doc" Size="22" />
@@ -98,6 +98,8 @@
 
 @code {
     [Parameter, EditorRequired] public ExamSession Session { get; set; } = default!;
+
+    private Ui T => Ui.For(Session.Course.Language);
     [Parameter] public bool Ready { get; set; }
 
     private int Count(ExamDomain d) => Session.ScoredPages.Count(p => p.Item.Domain == d);

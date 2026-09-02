@@ -13,6 +13,25 @@ public sealed class TrainingProgress
 
     public event Action? Changed;
 
+    /// <summary>The course whose modules are being read. Set when a course is opened.</summary>
+    public Course Course { get; private set; } = CourseCatalog.Default;
+
+    public IReadOnlyList<TrainingModule> Modules => Course.Modules;
+
+    /// <summary>Switches course, clearing any position held in the previous one.</summary>
+    public void UseCourse(Course course)
+    {
+        if (Course == course)
+        {
+            return;
+        }
+
+        Course = course;
+        CurrentModule = null;
+        CurrentLesson = null;
+        Changed?.Invoke();
+    }
+
     public TrainingModule? CurrentModule { get; private set; }
 
     public Lesson? CurrentLesson { get; private set; }
@@ -21,7 +40,7 @@ public sealed class TrainingProgress
 
     public int ReadCount => _read.Count;
 
-    public int TotalLessons => TrainingCatalog.AllLessons.Count;
+    public int TotalLessons => Modules.Sum(m => m.LessonCount);
 
     public double PercentRead => TotalLessons == 0
         ? 0

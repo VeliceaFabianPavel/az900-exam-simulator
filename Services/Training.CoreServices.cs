@@ -12,7 +12,7 @@ public static partial class TrainingCatalog
     {
         Id = "m2",
         Title = "Azure core services",
-        Domain = ExamDomain.ArchitectureAndServices,
+        Domain = AzureDomains.ArchitectureAndServices,
         Reference = M2,
         Pages = "ch. 2, p90-133",
         Blurb = "How Azure is laid out geographically and organisationally, and the compute "

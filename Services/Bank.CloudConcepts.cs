@@ -6,7 +6,7 @@ namespace MockExam.Fluent.Services;
 // Facts sourced from chapter 1 of the study guide; wording is original.
 public static partial class QuestionBank
 {
-    private const ExamDomain D1 = ExamDomain.CloudConcepts;
+    private static readonly ExamDomain D1 = AzureDomains.CloudConcepts;
     private const string R1 = "Study guide, ch. 1: Cloud Concepts";
 
     private static IEnumerable<Item> CloudConcepts()

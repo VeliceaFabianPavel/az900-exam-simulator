@@ -1,0 +1,83 @@
+@using MockExam.Fluent.Models
+@* Landing screen: choose which subject to work on. *@
+
+<div class="pre-card pick">
+    <div class="pre-body">
+        <h1 class="pre-ttl">Choose a course</h1>
+        <h2 class="pre-sub">Alege un curs</h2>
+
+        <p>
+            Two subjects share this platform. Each has its own question bank, its own study
+            guide, and its own exam format.
+        </p>
+
+        <div class="course-grid">
+            @foreach (var c in CourseCatalog.All)
+            {
+                var course = c;
+                var practice = course.FormsFor(ExamMode.Practice).Count;
+                var exams = course.FormsFor(ExamMode.Exam).Count;
+
+                <FluentCard Class="course-card">
+                    <div class="course-head">
+                        <span class="course-icon">
+                            <AppIcon Name="@(course.Id == "java" ? "lab" : "doc")" Size="22" />
+                        </span>
+                        <span class="course-titles">
+                            <span class="course-name">@course.Name</span>
+                            <span class="course-sub">@course.Subtitle</span>
+                        </span>
+                        <FluentBadge Appearance="Appearance.Neutral">
+                            @course.Language.ToUpperInvariant()
+                        </FluentBadge>
+                    </div>
+
+                    <p class="course-blurb">@course.Blurb</p>
+
+                    <ul class="course-facts">
+                        <li>
+                            <AppIcon Name="list" Size="16" />
+                            <span>@course.Questions.Count @(course.Language == "ro" ? "intrebari" : "questions")</span>
+                        </li>
+                        <li>
+                            <AppIcon Name="book" Size="16" />
+                            <span>
+                                @course.Modules.Sum(m => m.LessonCount)
+                                @(course.Language == "ro" ? "lectii" : "lessons")
+                                &middot; @course.Modules.Count
+                                @(course.Language == "ro" ? "module" : "modules")
+                            </span>
+                        </li>
+                        <li>
+                            <AppIcon Name="timer" Size="16" />
+                            <span>
+                                @course.QuestionsPerForm
+                                @(course.Language == "ro" ? "intrebari" : "questions")
+                                &middot; @course.DurationMinutes
+                                @(course.Language == "ro" ? "minute" : "min")
+                            </span>
+                        </li>
+                        <li>
+                            <AppIcon Name="check-circle" Size="16" />
+                            <span>
+                                @practice
+                                @(course.Language == "ro" ? "teste de exersare" : "practice forms")
+                                &middot; @exams
+                                @(course.Language == "ro" ? "examene" : "exam forms")
+                            </span>
+                        </li>
+                    </ul>
+
+                    <FluentButton Appearance="Appearance.Accent"
+                                  OnClick="() => OnSelect.InvokeAsync(course)">
+                        @(course.Language == "ro" ? "Deschide cursul" : "Open course")
+                    </FluentButton>
+                </FluentCard>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback<Course> OnSelect { get; set; }
+}

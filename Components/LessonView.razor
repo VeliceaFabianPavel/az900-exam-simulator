@@ -24,7 +24,7 @@
 
     @if (Lesson.Points.Count > 0)
     {
-        <h2 class="lesson-h2">What to know</h2>
+        <h2 class="lesson-h2">@T.WhatToKnow</h2>
         <ul class="lesson-points">
             @foreach (var p in Lesson.Points)
             {
@@ -63,7 +63,7 @@
 
     @if (Lesson.Essentials.Count > 0)
     {
-        <h2 class="lesson-h2">Where the exam catches people</h2>
+        <h2 class="lesson-h2">@T.ExamTraps</h2>
         <ul class="lesson-essentials">
             @foreach (var e in Lesson.Essentials)
             {
@@ -86,19 +86,19 @@
     <footer class="lesson-foot">
         <FluentButton Appearance="Appearance.Neutral" Disabled="@(!HasPrevious)" OnClick="OnPrevious">
             <AppIcon Name="chevron-left" Size="16" />
-            <span style="margin-left:6px">Previous</span>
+            <span style="margin-left:6px">@T.Previous</span>
         </FluentButton>
 
         <FluentButton Appearance="@(IsRead ? Appearance.Neutral : Appearance.Accent)"
                       OnClick="OnToggleRead">
             <AppIcon Name="@(IsRead ? "check-circle" : "check")" Size="16" />
-            <span style="margin-left:6px">@(IsRead ? "Marked as read" : "Mark as read")</span>
+            <span style="margin-left:6px">@(IsRead ? T.MarkedAsRead : T.MarkAsRead)</span>
         </FluentButton>
 
         <span class="spacer"></span>
 
         <FluentButton Appearance="Appearance.Neutral" Disabled="@(!HasNext)" OnClick="OnNext">
-            <span style="margin-right:6px">Next</span>
+            <span style="margin-right:6px">@T.Next</span>
             <AppIcon Name="chevron-right" Size="16" />
         </FluentButton>
     </footer>
@@ -113,6 +113,8 @@
     [Parameter] public EventCallback OnPrevious { get; set; }
     [Parameter] public EventCallback OnNext { get; set; }
     [Parameter] public EventCallback OnToggleRead { get; set; }
+
+    [Parameter] public Ui T { get; set; } = Ui.En;
 
     private IReadOnlyList<Item> Questions => TrainingCatalog.QuestionsFor(Lesson);
 }
