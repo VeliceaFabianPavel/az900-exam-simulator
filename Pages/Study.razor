@@ -114,6 +114,24 @@
                 </p>
             </div>
 
+            @* Practice route out of the reading flow, for courses with a published outline. *@
+            @if (Course.HasOutline)
+            {
+                <div class="study-custom">
+                    <button type="button" class="study-cta" @onclick="@(() => Nav.NavigateTo("study/custom"))">
+                        <span class="study-cta-icon"><AppIcon Name="shuffle" Size="20" /></span>
+                        <span class="study-cta-txt">
+                            <span class="study-cta-ttl">Build a custom practice test</span>
+                            <span class="study-cta-sub">
+                                Pick chapters and subchapters from the @Course.Name skills outline,
+                                then sit them in Practice or Exam mode.
+                            </span>
+                        </span>
+                        <AppIcon Name="chevron-right" Size="18" />
+                    </button>
+                </div>
+            }
+
             <div class="module-grid">
                 @foreach (var m in Course.Modules)
                 {

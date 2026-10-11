@@ -78,6 +78,12 @@ public sealed record DomainResult(ExamDomain Domain, int Correct, int Total)
     public double Percent => Total == 0 ? 0 : (double)Correct / Total * 100;
 }
 
+/// <summary>Scored outcome for one skills-outline objective picked for a custom test.</summary>
+public sealed record SectionResult(SkillsSection Section, int Correct, int Total)
+{
+    public double Percent => Total == 0 ? 0 : (double)Correct / Total * 100;
+}
+
 /// <summary>
 /// Delivery engine: flattens the selected form into pages, tracks responses and
 /// marking, runs the countdown clock, and grades the attempt when it ends.
@@ -118,8 +124,8 @@ public sealed class ExamSession
     /// <summary>The subject being delivered. Supplies the domains, timing and pass mark.</summary>
     public Course Course { get; private set; } = CourseCatalog.Default;
 
-    /// <summary>Countdown length for this course.</summary>
-    public int Minutes => Course.DurationMinutes;
+    /// <summary>Countdown length for this form, which a custom test sizes to its length.</summary>
+    public int Minutes => Form.Minutes > 0 ? Form.Minutes : Course.DurationMinutes;
 
     /// <summary>Scaled score needed to pass this course.</summary>
     public int Pass => Course.PassMark;
@@ -509,6 +515,21 @@ public sealed class ExamSession
                 var subset = results.Where(r => r.Item.Domain == d).ToList();
                 return new DomainResult(d, subset.Count(r => r.Correct), subset.Count);
             })
+        ];
+    }
+
+    /// <summary>Outcome per objective a custom test was built from, in outline order.</summary>
+    public IReadOnlyList<SectionResult> SectionResults()
+    {
+        var results = Results();
+        return
+        [
+            .. Form.Sections.Select(s =>
+            {
+                var subset = results.Where(r => Course.SectionOf(r.Item) == s).ToList();
+                return new SectionResult(s, subset.Count(r => r.Correct), subset.Count);
+            })
+            .Where(r => r.Total > 0)
         ];
     }
 

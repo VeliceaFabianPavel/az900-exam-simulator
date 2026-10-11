@@ -16,7 +16,8 @@
 **A complete, free practice environment for Microsoft Azure Fundamentals (AZ-900).**
 247 original practice questions, 42 study lessons, ten full 50-question exam forms, a timed
 exam mode that looks and behaves like the real testing software, an untimed practice mode with
-hints and per-question feedback, and a study guide that links straight into the questions.
+hints and per-question feedback, custom practice tests built from any part of the official
+skills outline, and a study guide that links straight into the questions.
 
 It runs entirely in your browser. Nothing to install, no account, no sign-up, no tracking, no
 ads, no paywall, no "premium tier". Open it and start studying.
@@ -81,6 +82,50 @@ linked in both directions.
 - **Questions link back to lessons**: in practice mode, revealing an answer offers a "Read the
   source" link that opens the exact lesson in a dialog, with the specific points that question
   tests highlighted
+- **Custom practice tests**: build your own test from the chapters and subchapters of
+  Microsoft's skills outline, see below
+
+---
+
+## Custom practice tests
+
+The study guide has a **Build a custom practice test** entry (`/study/custom`). It lets you aim
+practice at exactly the part of the exam you are weak on, rather than sitting a full form.
+
+1. **Choose what to cover** — tick whole chapters or single subchapters. The chapters are the
+   three functional groups of Microsoft's AZ-900 skills outline and the subchapters are the
+   eleven objectives beneath them, worded as Microsoft words them
+2. **Choose how many questions** — quick picks of 10, 20, 30 or 50, all of them, or anything in
+   between on the slider
+3. **Choose Practice or Exam mode** — the same two modes as the full forms. In Exam mode the
+   clock keeps the live exam's pace of 45 minutes per 50 questions, so 10 questions get 9
+   minutes
+
+Every attempt draws a fresh set. Questions are shared out across the subchapters you picked in
+proportion to how many each holds, then delivered in a random order with their answer options
+shuffled. The score report breaks the result down by subchapter, and **Build another custom
+test** takes you back to the builder with your last selection still ticked.
+
+| # | Skills-outline objective | Questions |
+|---|---|---|
+| 1.1 | Describe cloud computing | 29 |
+| 1.2 | Describe the benefits of using cloud services | 18 |
+| 1.3 | Describe cloud service types | 15 |
+| 2.1 | Describe the core architectural components of Azure | 22 |
+| 2.2 | Describe Azure compute and networking services | 18 |
+| 2.3 | Describe Azure storage services | 28 |
+| 2.4 | Describe Azure identity, access, and security | 35 |
+| 3.1 | Describe cost management in Azure | 31 |
+| 3.2 | Describe features and tools in Azure for governance and compliance | 19 |
+| 3.3 | Describe features and tools for managing and deploying Azure resources | 20 |
+| 3.4 | Describe monitoring tools in Azure | 12 |
+
+Two caveats, both inherited from the study guide's scope rather than the outline's:
+
+- **2.2 has no networking questions**, because chapter 4 is out of scope (see below). It covers
+  compute, application hosting and Azure data services
+- **Service level agreements sit under 3.1.** They left the skills outline in 2022, but the study
+  guide still teaches them alongside pricing, so they stay with cost management
 
 ---
 
@@ -282,8 +327,9 @@ Models/
 Services/
   QuestionBank.cs        Authoring helpers for every question format
   Bank.*.cs              The 247 questions, one file per chapter
-  ExamCatalog.cs         Builds the ten forms, stratifies and shuffles
+  ExamCatalog.cs         Builds the ten forms and custom tests, stratifies and shuffles
   ExamSession.cs         Delivery engine: navigation, timing, scoring
+  SkillsOutline.cs       Microsoft's skills outline, mapped onto the question bank
   TrainingCatalog.cs     Modules, plus question/lesson cross-linking
   Training.*.cs          The 42 lessons, one file per chapter
   TrainingProgress.cs    Which lessons have been read
@@ -292,6 +338,7 @@ Components/              Question renderers, assist panel, feedback, dialogs
 Pages/
   Exam.razor             The exam simulator            (/)
   Study.razor            The training module           (/study)
+  CustomTest.razor       The custom test builder       (/study/custom)
 ```
 
 ### How questions and lessons find each other
@@ -304,6 +351,11 @@ When you reveal an answer in practice mode, the app finds the lessons sharing th
 ranks them by how strongly their content matches the question, and highlights the specific
 lesson points that question is testing. The matching is computed at runtime from term overlap,
 so adding a question or a lesson wires itself up automatically.
+
+The same `Objective` places a question in the custom test builder. `SkillsOutline.cs` lists
+which `Objective` values fall under each of Microsoft's eleven outline objectives, plus a short
+list of question ids it claims directly where the study guide and the outline group a topic
+differently (tags, for example, are governance in the book but cost management in the outline).
 
 ---
 

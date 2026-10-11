@@ -101,7 +101,9 @@ else
 
 <div class="score-actions">
     <FluentButton Appearance="Appearance.Neutral" OnClick="OnBack">Back to score report</FluentButton>
-    <FluentButton Appearance="Appearance.Accent" OnClick="OnRestart">Choose another exam</FluentButton>
+    <FluentButton Appearance="Appearance.Accent" OnClick="OnRestart">
+        @(Session.Form.IsCustom ? "Build another custom test" : "Choose another exam")
+    </FluentButton>
 </div>
 
 @code {

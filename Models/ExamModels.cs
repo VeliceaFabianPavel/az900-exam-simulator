@@ -58,6 +58,33 @@ public static class AzureDomains
         [CloudConcepts, ArchitectureAndServices, ManagementAndGovernance];
 }
 
+/// <summary>
+/// One objective of a published skills outline, the level beneath an <see cref="ExamDomain"/>.
+/// A custom test is assembled by picking these.
+/// </summary>
+public sealed class SkillsSection
+{
+    /// <summary>Position in the outline, for example "2.3". Doubles as a stable identifier.</summary>
+    public required string Key { get; init; }
+
+    /// <summary>The objective as the outline words it.</summary>
+    public required string Title { get; init; }
+
+    public required ExamDomain Domain { get; init; }
+
+    /// <summary>What the bank's questions for this objective cover, in one line.</summary>
+    public string Summary { get; init; } = "";
+
+    /// <summary><see cref="Item.Objective"/> values whose questions fall under this objective.</summary>
+    public IReadOnlyList<string> Objectives { get; init; } = [];
+
+    /// <summary>
+    /// Question ids that belong here even though their <see cref="Item.Objective"/> points
+    /// elsewhere. A claim wins over an objective match.
+    /// </summary>
+    public IReadOnlyList<string> Claims { get; init; } = [];
+}
+
 /// <summary>An exhibit tab rendered above or beside the question stem.</summary>
 public sealed record Exhibit(string Title, string Html);
 

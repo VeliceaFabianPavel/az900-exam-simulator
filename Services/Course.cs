@@ -47,6 +47,25 @@ public sealed class Course
 
     public IReadOnlyList<Item> QuestionsIn(ExamDomain domain) =>
         [.. Questions.Where(q => q.Domain == domain)];
+
+    /// <summary>
+    /// The objectives of the published skills outline, the level beneath <see cref="Domains"/>.
+    /// Empty when the course follows no published outline, which then offers no custom tests.
+    /// </summary>
+    public IReadOnlyList<SkillsSection> Outline { get; init; } = [];
+
+    public bool HasOutline => Outline.Count > 0;
+
+    public IReadOnlyList<SkillsSection> SectionsIn(ExamDomain domain) =>
+        [.. Outline.Where(s => s.Domain == domain)];
+
+    /// <summary>The outline objective a question falls under, or null when there is none.</summary>
+    public SkillsSection? SectionOf(Item item) =>
+        Outline.FirstOrDefault(s => s.Claims.Contains(item.Id))
+        ?? Outline.FirstOrDefault(s => s.Objectives.Contains(item.Objective));
+
+    public IReadOnlyList<Item> QuestionsIn(SkillsSection section) =>
+        [.. Questions.Where(q => SectionOf(q) == section)];
 }
 
 /// <summary>Every course the platform ships.</summary>
@@ -63,6 +82,7 @@ public static class CourseCatalog
         Questions = QuestionBank.All,
         Modules = TrainingCatalog.Modules,
         Forms = ExamCatalog.Az900Forms,
+        Outline = SkillsOutline.Az900,
         QuestionsPerForm = 50,
         DurationMinutes = 45,
         PassMark = 700
