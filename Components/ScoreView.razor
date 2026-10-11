@@ -51,26 +51,27 @@
     }
 </div>
 
-<h2>@T.PerformanceByArea</h2>
+<h2>@(Session.Form.IsCustom ? "Performance by subchapter" : T.PerformanceByArea)</h2>
 
 <p>
-    The bars below show how you performed in each area of the skills outline.
+    The bars below show how you performed in each
+    @(Session.Form.IsCustom ? "part of the skills outline you picked" : "area of the skills outline").
     Use them to decide where to concentrate your revision.
 </p>
 
 <div class="domain-list">
-    @foreach (var d in Session.DomainResults())
+    @foreach (var row in Breakdown)
     {
         <div class="domain-row">
             <div class="domain-head">
-                <span class="domain-name">@d.Domain.Name()</span>
-                <span class="domain-score">@d.Correct / @d.Total</span>
+                <span class="domain-name">@row.Name</span>
+                <span class="domain-score">@row.Correct / @row.Total</span>
             </div>
             <div class="domain-track">
-                <span class="@Band(d.Percent)" style="width:@((int)Math.Round(d.Percent))%"></span>
+                <span class="@Band(row.Percent)" style="width:@((int)Math.Round(row.Percent))%"></span>
             </div>
             <span class="domain-meta">
-                @((int)Math.Round(d.Percent))% correct &middot; exam weighting @d.Domain.Weighting()
+                @((int)Math.Round(row.Percent))% correct &middot; @row.Meta
             </span>
         </div>
     }
@@ -81,7 +82,9 @@
     <FluentMessageBar Intent="MessageIntent.Warning" AllowDismiss="false">
         You revealed the answer on @Session.HelpedCount of @Session.TotalQuestions questions,
         so this score runs ahead of what you would get unaided. Those questions are flagged in
-        the answer review &mdash; sit the same form in Exam mode to see where you really stand.
+        the answer review &mdash;
+        @(Session.Form.IsCustom ? "build the same test in Exam mode" : "sit the same form in Exam mode")
+        to see where you really stand.
     </FluentMessageBar>
 }
 
@@ -96,7 +99,7 @@
         @T.ReviewAnswers
     </FluentButton>
     <FluentButton Appearance="Appearance.Neutral" OnClick="OnRestart">
-        @T.ChooseAnother
+        @(Session.Form.IsCustom ? "Build another custom test" : T.ChooseAnother)
     </FluentButton>
 </div>
 
@@ -108,6 +111,19 @@
     [Parameter] public EventCallback OnReview { get; set; }
 
     private int Percent => (int)Math.Round(Session.PercentCorrect);
+
+    /// <summary>
+    /// One bar per domain for a published form. A custom test covers only what was picked, so
+    /// it gets one bar per picked objective instead of domains it may not touch.
+    /// </summary>
+    private IEnumerable<(string Name, int Correct, int Total, double Percent, string Meta)> Breakdown =>
+        Session.Form.IsCustom
+            ? Session.SectionResults().Select(s => (
+                $"{s.Section.Key} {s.Section.Title}", s.Correct, s.Total, s.Percent,
+                s.Section.Domain.ShortName()))
+            : Session.DomainResults().Select(d => (
+                d.Domain.Name(), d.Correct, d.Total, d.Percent,
+                $"exam weighting {d.Domain.Weighting()}"));
 
     private int Unanswered => Session.TotalQuestions - Session.AnsweredCount;
 

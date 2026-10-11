@@ -8,7 +8,22 @@ namespace MockExam.Fluent.Services;
 /// the AZ-900 forms work; a course can instead publish separate practice and exam forms.
 /// </param>
 public sealed record ExamForm(
-    int Number, string Title, string Focus, int Seed, ExamMode? OnlyMode = null);
+    int Number, string Title, string Focus, int Seed, ExamMode? OnlyMode = null)
+{
+    /// <summary>
+    /// Set on a custom test: the skills-outline objectives its questions are drawn from. Empty
+    /// on a published form, which is stratified across the course's domains instead.
+    /// </summary>
+    public IReadOnlyList<SkillsSection> Sections { get; init; } = [];
+
+    /// <summary>Questions a custom test draws. Published forms use the course's form size.</summary>
+    public int Size { get; init; }
+
+    /// <summary>Countdown in minutes when it differs from the course's, as a custom test's does.</summary>
+    public int Minutes { get; init; }
+
+    public bool IsCustom => Sections.Count > 0;
+}
 
 /// <summary>What the picker screen hands back: a form plus the mode to deliver it in.</summary>
 public sealed record ExamStart(ExamForm Form, ExamMode Mode);
@@ -54,10 +69,46 @@ public static class ExamCatalog
         Az900Forms.FirstOrDefault(f => f.Number == number) ?? Az900Forms[0];
 
     /// <summary>
-    /// Selects the form's questions, stratified across the three domains using the
-    /// published blueprint weighting, then randomises presentation for this attempt.
+    /// A form made from the skills-outline objectives a candidate picked. It has no fixed seed,
+    /// so every attempt draws a fresh set of questions.
+    /// </summary>
+    public static ExamForm Custom(Course course, IEnumerable<SkillsSection> sections, int size)
+    {
+        List<SkillsSection> picked = [.. sections];
+        var available = picked.Sum(s => course.QuestionsIn(s).Count);
+        size = Math.Clamp(size, 1, Math.Max(available, 1));
+
+        return new ExamForm(0, "Custom practice test", string.Join(", ", picked.Select(s => s.Key)), 0)
+        {
+            Sections = picked,
+            Size = size,
+            Minutes = MinutesFor(course, size)
+        };
+    }
+
+    /// <summary>
+    /// Countdown for a form of the given length, at the same pace per question as the course's
+    /// published forms: 45 minutes for 50 questions makes 9 minutes for 10.
+    /// </summary>
+    public static int MinutesFor(Course course, int questions) =>
+        Math.Max(1, (questions * course.DurationMinutes + course.QuestionsPerForm - 1)
+                    / course.QuestionsPerForm);
+
+    /// <summary>
+    /// Selects the form's questions, then randomises presentation for this attempt. A published
+    /// form is stratified across the domains using the blueprint weighting; a custom test draws
+    /// from the objectives that were picked.
     /// </summary>
     public static IReadOnlyList<Item> Build(Course course, ExamForm form)
+    {
+        var selected = form.IsCustom ? DrawCustom(course, form) : DrawPublished(course, form);
+
+        // A fresh seed per attempt, so the same form feels different each time.
+        var shuffler = new Random();
+        return [.. Shuffle(selected, shuffler).Select(i => Randomise(i, shuffler))];
+    }
+
+    private static List<Item> DrawPublished(Course course, ExamForm form)
     {
         var picker = new Random(form.Seed);
         List<Item> selected = [];
@@ -76,9 +127,44 @@ public static class ExamCatalog
             selected.AddRange(Sample(rest, course.QuestionsPerForm - selected.Count, picker));
         }
 
-        // A fresh seed per attempt, so the same form feels different each time.
-        var shuffler = new Random();
-        return [.. Shuffle(selected, shuffler).Select(i => Randomise(i, shuffler))];
+        return selected;
+    }
+
+    /// <summary>
+    /// Shares a custom test's questions across the picked objectives in proportion to how many
+    /// each holds, so the mix follows the selection rather than the luck of the draw.
+    /// </summary>
+    private static List<Item> DrawCustom(Course course, ExamForm form)
+    {
+        var picker = new Random();
+        var pools = form.Sections.Select(course.QuestionsIn).Where(p => p.Count > 0).ToList();
+        var quotas = Apportion([.. pools.Select(p => p.Count)], form.Size);
+        return [.. pools.SelectMany((pool, i) => Sample(pool, quotas[i], picker))];
+    }
+
+    /// <summary>
+    /// Splits <paramref name="total"/> across groups in proportion to their sizes, by largest
+    /// remainder. The shares always add up to the total, and none exceeds its group.
+    /// </summary>
+    private static int[] Apportion(IReadOnlyList<int> sizes, int total)
+    {
+        var available = sizes.Sum();
+        if (available == 0)
+        {
+            return new int[sizes.Count];
+        }
+
+        total = Math.Clamp(total, 0, available);
+        var shares = sizes.Select(s => s * total / available).ToArray();
+        var leftover = total - shares.Sum();
+
+        foreach (var i in Enumerable.Range(0, sizes.Count)
+                     .OrderByDescending(i => sizes[i] * total % available)
+                     .Take(leftover))
+        {
+            shares[i]++;
+        }
+        return shares;
     }
 
     private static List<T> Sample<T>(IReadOnlyList<T> pool, int count, Random rng) =>

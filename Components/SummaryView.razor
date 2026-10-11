@@ -31,7 +31,8 @@
                 <li>
                     <AppIcon Name="clock" Size="22" />
                     <span>
-                        Session Time: <b>65 minutes</b><br />
+                        @* Seat time on the live exam is the exam plus twenty minutes. *@
+                        Session Time: <b>@(Session.Minutes + 20) minutes</b><br />
                         <span class="pre-note">(Includes instructions, agreement, and exam)</span>
                     </span>
                 </li>
@@ -40,7 +41,7 @@
                 <AppIcon Name="@(Session.IsPractice ? "infinity" : "timer")" Size="22" />
                 <span>
                     Exam Time:
-                    <b>@(Session.IsPractice ? "No limit" : $"{ExamSession.DurationMinutes} minutes")</b>
+                    <b>@(Session.IsPractice ? "No limit" : $"{Session.Minutes} minutes")</b>
                     @if (Session.IsPractice)
                     {
                         <br />
@@ -52,12 +53,30 @@
                 <AppIcon Name="list" Size="22" />
                 <span>Total Exam Questions: <b>@Session.TotalQuestions</b></span>
             </li>
-            @foreach (var d in Session.Course.Domains)
+            @if (Session.Form.IsCustom)
             {
                 <li>
                     <AppIcon Name="doc" Size="22" />
-                    <span>@d.Name(): <b>@Count(d) questions</b> (@d.Weighting())</span>
+                    <span>
+                        Subchapters covered:
+                        <span class="pre-sections">
+                            @foreach (var s in Session.Form.Sections)
+                            {
+                                <span>@s.Key @s.Title: <b>@Count(s)</b></span>
+                            }
+                        </span>
+                    </span>
                 </li>
+            }
+            else
+            {
+                @foreach (var d in Session.Course.Domains)
+                {
+                    <li>
+                        <AppIcon Name="doc" Size="22" />
+                        <span>@d.Name(): <b>@Count(d) questions</b> (@d.Weighting())</span>
+                    </li>
+                }
             }
             @if (!Ready)
             {
@@ -103,4 +122,7 @@
     [Parameter] public bool Ready { get; set; }
 
     private int Count(ExamDomain d) => Session.ScoredPages.Count(p => p.Item.Domain == d);
+
+    private int Count(SkillsSection s) =>
+        Session.ScoredPages.Count(p => Session.Course.SectionOf(p.Item) == s);
 }

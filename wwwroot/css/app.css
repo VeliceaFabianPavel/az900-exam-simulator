@@ -3534,3 +3534,376 @@ fluent-dialog .fluent-dialog-footer {
         grid-template-columns: 1fr;
     }
 }
+
+/* ==================================================================== *
+ *  Custom practice test                                                *
+ * ==================================================================== */
+
+/* Entry point on the study guide overview. */
+.study-custom {
+    max-width: 1200px;
+    margin: 0 auto 16px;
+}
+
+/* Picked objectives on the pre-exam summary. */
+.pre-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 6px;
+    font-size: var(--type-ramp-minus-1-font-size);
+}
+
+.custom {
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+.custom-intro p {
+    margin: 0;
+    color: var(--neutral-foreground-hint);
+}
+
+.custom-step-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+}
+
+.custom-bulk {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.custom-link {
+    min-height: 32px;
+    padding: 4px 10px;
+    border: 0;
+    border-radius: var(--control-corner-radius, 4px);
+    background: transparent;
+    color: var(--accent-foreground-rest);
+    font-family: inherit;
+    font-size: var(--type-ramp-minus-1-font-size);
+    cursor: pointer;
+}
+
+.custom-link:hover:not(:disabled) {
+    background-color: var(--neutral-fill-stealth-hover);
+}
+
+.custom-link:disabled {
+    color: var(--neutral-foreground-hint);
+    opacity: 0.6;
+    cursor: default;
+}
+
+/* Chapters and subchapters ---------------------------------------------- */
+
+.chapter-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.chapter {
+    background-color: var(--neutral-layer-1);
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-radius: var(--layer-corner-radius, 8px);
+    overflow: hidden;
+    transition: border-color 120ms ease;
+}
+
+.chapter.on {
+    border-color: var(--accent-fill-rest);
+}
+
+.chapter-head,
+.section-row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+}
+
+.chapter-head {
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.chapter-head:hover,
+.section-row:hover:not(:disabled) {
+    background-color: var(--neutral-fill-stealth-hover);
+}
+
+.chapter-head:focus-visible,
+.section-row:focus-visible {
+    outline: 2px solid var(--accent-fill-rest);
+    outline-offset: -2px;
+}
+
+.chapter-no {
+    display: grid;
+    place-items: center;
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--neutral-fill-secondary-rest);
+    font-weight: 600;
+}
+
+.chapter.on .chapter-no {
+    background-color: var(--accent-fill-rest);
+    color: var(--foreground-on-accent-rest);
+}
+
+.chapter-titles,
+.section-txt {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.chapter-name {
+    font-size: var(--type-ramp-plus-1-font-size);
+    font-weight: 600;
+}
+
+.chapter-meta,
+.section-sum {
+    color: var(--neutral-foreground-hint);
+    font-size: var(--type-ramp-minus-1-font-size);
+    line-height: 1.4;
+}
+
+.section-list {
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+}
+
+.section-row {
+    align-items: flex-start;
+    padding: 10px 18px;
+}
+
+.section-row:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.section-key {
+    flex: 0 0 2.4em;
+    color: var(--neutral-foreground-hint);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.section-name {
+    font-weight: 600;
+}
+
+.section-count {
+    flex: 0 0 auto;
+    min-width: 2.4em;
+    padding: 1px 8px;
+    border-radius: 999px;
+    text-align: center;
+    background-color: var(--neutral-fill-secondary-rest);
+    font-size: var(--type-ramp-minus-1-font-size);
+    font-variant-numeric: tabular-nums;
+}
+
+.section-row.on .section-count {
+    background-color: var(--accent-fill-rest);
+    color: var(--foreground-on-accent-rest);
+}
+
+/* Checkbox mark, drawn rather than native so a chapter can show "some". */
+.tick {
+    display: grid;
+    place-items: center;
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    box-sizing: border-box;
+    border: 1px solid var(--neutral-foreground-hint);
+    border-radius: 4px;
+    color: var(--foreground-on-accent-rest);
+}
+
+.tick.all,
+.tick.some {
+    background-color: var(--accent-fill-rest);
+    border-color: var(--accent-fill-rest);
+}
+
+.section-row .tick {
+    margin-top: 2px;
+}
+
+/* Length ---------------------------------------------------------------- */
+
+.count-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px 18px;
+    background-color: var(--neutral-layer-1);
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-radius: var(--layer-corner-radius, 8px);
+}
+
+.count-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.count-chip {
+    min-width: 52px;
+    min-height: 36px;
+    padding: 4px 14px;
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-radius: 999px;
+    background-color: var(--neutral-layer-2);
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.count-chip:hover:not(:disabled) {
+    border-color: var(--accent-fill-rest);
+}
+
+.count-chip:focus-visible {
+    outline: 2px solid var(--accent-fill-rest);
+    outline-offset: 2px;
+}
+
+.count-chip.selected {
+    background-color: var(--accent-fill-rest);
+    border-color: var(--accent-fill-rest);
+    color: var(--foreground-on-accent-rest);
+    font-weight: 600;
+}
+
+.count-chip:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.count-slider {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.count-slider input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 28px;
+    margin: 0;
+    accent-color: var(--accent-fill-rest);
+}
+
+.count-value {
+    flex: 0 0 auto;
+    min-width: 6em;
+    text-align: right;
+    color: var(--neutral-foreground-hint);
+    font-size: var(--type-ramp-minus-1-font-size);
+    font-variant-numeric: tabular-nums;
+}
+
+.count-value b {
+    color: var(--neutral-foreground-rest);
+    font-size: var(--type-ramp-base-font-size);
+}
+
+/* Start tray, pinned to the bottom of the scroll area -------------------- */
+
+/* A sticky box stops short of its scroll container's padding, which would let the
+   questions scroll past underneath the tray, so the tray supplies the bottom gap instead. */
+.study-main.custom-main {
+    padding-bottom: 0;
+}
+
+.custom-tray {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 28px;
+    padding: 14px 18px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+    background-color: var(--neutral-layer-1);
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-bottom: 0;
+    border-radius: var(--layer-corner-radius, 8px) var(--layer-corner-radius, 8px) 0 0;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.custom-tray-txt {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.custom-tray-ttl {
+    font-weight: 600;
+}
+
+.custom-tray-sub {
+    color: var(--neutral-foreground-hint);
+    font-size: var(--type-ramp-minus-1-font-size);
+}
+
+@media (max-width: 720px) {
+    .chapter-head {
+        padding: 12px 14px;
+        gap: 10px;
+    }
+
+    .chapter-no {
+        display: none;
+    }
+
+    .section-row {
+        padding: 10px 14px;
+        gap: 10px;
+    }
+
+    .section-key {
+        flex-basis: 2em;
+    }
+
+    .count-panel {
+        padding: 14px;
+    }
+
+    .custom-tray {
+        gap: 10px;
+        margin-top: 20px;
+        padding: 10px 14px;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    }
+}

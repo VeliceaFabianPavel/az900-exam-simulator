@@ -4,6 +4,7 @@
 @inject ExamSession Session
 @inject CourseState Courses
 @inject TrainingProgress Training
+@inject NavigationManager Nav
 
 <PageTitle>Practice Exam</PageTitle>
 
@@ -170,11 +171,11 @@ else
                 }
                 else if (Session.Screen == ExamScreen.Score)
                 {
-                    <ScoreView Session="Session" OnRestart="Session.Restart" OnReview="Session.ShowReport" />
+                    <ScoreView Session="Session" OnRestart="Restart" OnReview="Session.ShowReport" />
                 }
                 else if (Session.Screen == ExamScreen.Report)
                 {
-                    <ReportView Session="Session" OnRestart="Session.Restart" OnBack="Session.ShowScore" />
+                    <ReportView Session="Session" OnRestart="Restart" OnBack="Session.ShowScore" />
                 }
                 else if (Session.Screen == ExamScreen.Feedback)
                 {
@@ -334,7 +335,7 @@ else
         {
             <p>
                 You are in <strong>Exam mode</strong>. The clock counts down from
-                @ExamSession.DurationMinutes minutes and the exam ends by itself when it
+                @Session.Minutes minutes and the exam ends by itself when it
                 reaches zero. Hints and answers are not available until you end the exam.
             </p>
         }
@@ -471,6 +472,18 @@ else
 
     private void StartExam(ExamStart start) =>
         Session.SelectForm(Courses.Current, start.Form, start.Mode);
+
+    /// <summary>A custom test goes back to its builder, a published form to the form picker.</summary>
+    private void Restart()
+    {
+        var custom = Session.Form.IsCustom;
+        Session.Restart();
+
+        if (custom)
+        {
+            Nav.NavigateTo("study/custom");
+        }
+    }
 
     private Task SaveResponse(Response response)
     {

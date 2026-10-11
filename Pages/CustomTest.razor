@@ -1,0 +1,299 @@
+@page "/study/custom"
+@using MockExam.Fluent.Models
+@inject ExamSession Session
+@inject CourseState Courses
+@inject NavigationManager Nav
+
+<PageTitle>Custom practice test</PageTitle>
+
+<div class="study-shell">
+
+    <header class="study-header">
+        <button type="button" class="study-back" @onclick="@(() => Nav.NavigateTo("study"))">
+            <AppIcon Name="chevron-left" Size="18" />
+            <span>@T.StudyGuide</span>
+        </button>
+
+        <div class="study-title">
+            <span class="study-ttl">Custom practice test</span>
+            <span class="study-sub">@Course.Name: @Course.Subtitle</span>
+        </div>
+    </header>
+
+    <main class="study-main custom-main">
+        <div class="custom">
+            @if (!Course.HasOutline)
+            {
+                <FluentMessageBar Intent="MessageIntent.Info" AllowDismiss="false">
+                    Custom tests are built from a published skills outline, and @Course.Name
+                    does not follow one.
+                </FluentMessageBar>
+            }
+            else
+            {
+                <div class="custom-intro">
+                    <h1 class="study-h1">Build your own practice test</h1>
+                    <p>
+                        Pick the parts of Microsoft's @Course.Name skills outline you want to work
+                        on, whole chapters or single subchapters, then choose how many questions
+                        and how to sit them. Every attempt draws a fresh set: the questions come
+                        in a random order and their answer options are shuffled.
+                    </p>
+                </div>
+
+                @* ------------------------------------------------ step 1: coverage *@
+                <div class="custom-step-head">
+                    <h3 class="pick-step">Step 1 · Choose chapters and subchapters</h3>
+                    <span class="custom-bulk">
+                        <button type="button" class="custom-link" disabled="@AllPicked"
+                                @onclick="PickAll">Select all</button>
+                        <button type="button" class="custom-link" disabled="@(_picked.Count == 0)"
+                                @onclick="() => _picked.Clear()">Clear</button>
+                    </span>
+                </div>
+
+                <div class="chapter-list">
+                    @for (var i = 0; i < Course.Domains.Count; i++)
+                    {
+                        var domain = Course.Domains[i];
+                        var number = i + 1;
+                        var sections = Course.SectionsIn(domain);
+                        var state = StateOf(sections);
+
+                        <section class="chapter @(state == Tick.None ? "" : "on")">
+                            <button type="button" class="chapter-head" role="checkbox"
+                                    aria-checked="@Aria(state)"
+                                    @onclick="() => Toggle(sections)">
+                                @Box(state)
+                                <span class="chapter-no">@number</span>
+                                <span class="chapter-titles">
+                                    <span class="chapter-name">@domain.Name()</span>
+                                    <span class="chapter-meta">
+                                        @domain.Weighting() of the exam &middot;
+                                        @sections.Sum(s => _counts[s.Key]) @T.QuestionsWord
+                                    </span>
+                                </span>
+                            </button>
+
+                            <ul class="section-list">
+                                @foreach (var s in sections)
+                                {
+                                    var section = s;
+                                    var on = _picked.Contains(section.Key);
+                                    var count = _counts[section.Key];
+
+                                    <li>
+                                        <button type="button" class="section-row @(on ? "on" : "")"
+                                                role="checkbox" aria-checked="@(on ? "true" : "false")"
+                                                disabled="@(count == 0)"
+                                                @onclick="() => Toggle(section)">
+                                            @Box(on ? Tick.All : Tick.None)
+                                            <span class="section-key">@section.Key</span>
+                                            <span class="section-txt">
+                                                <span class="section-name">@section.Title</span>
+                                                <span class="section-sum">@section.Summary</span>
+                                            </span>
+                                            <span class="section-count" title="Questions in the bank">@count</span>
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
+                        </section>
+                    }
+                </div>
+
+                @* ------------------------------------------------- step 2: length *@
+                <h3 class="pick-step">Step 2 · How many questions?</h3>
+
+                <div class="count-panel">
+                    <div class="count-chips" role="group" aria-label="Quick picks">
+                        @foreach (var n in Presets.Where(n => n < Available))
+                        {
+                            var size = n;
+                            <button type="button" class="count-chip @(Size == size ? "selected" : "")"
+                                    aria-pressed="@(Size == size ? "true" : "false")"
+                                    @onclick="() => _count = size">
+                                @size
+                            </button>
+                        }
+                        <button type="button" class="count-chip @(AllQuestions ? "selected" : "")"
+                                aria-pressed="@(AllQuestions ? "true" : "false")"
+                                disabled="@(Available == 0)"
+                                @onclick="() => _count = int.MaxValue">
+                            All @Available
+                        </button>
+                    </div>
+
+                    @* min and max come before value, so the browser never clamps a new value
+                       against the previous range. *@
+                    <div class="count-slider">
+                        <input type="range" min="1" max="@Math.Max(Available, 1)" step="1"
+                               value="@Math.Max(Size, 1)" disabled="@(Available == 0)"
+                               aria-label="Number of questions" @oninput="Slide" />
+                        <span class="count-value"><b>@Size</b> of @Available</span>
+                    </div>
+                </div>
+
+                @* --------------------------------------------------- step 3: mode *@
+                <h3 class="pick-step">Step 3 · How do you want to sit it?</h3>
+
+                <ModePicker @bind-Value="_mode" T="T" />
+
+                @* -------------------------------------------------------- start *@
+                <div class="custom-tray">
+                    <div class="custom-tray-txt">
+                        @if (Available == 0)
+                        {
+                            <span class="custom-tray-ttl">Nothing selected yet</span>
+                            <span class="custom-tray-sub">
+                                Pick at least one chapter or subchapter above.
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="custom-tray-ttl">
+                                @Size @T.QuestionsWord &middot; @T.ModeName(_mode)
+                            </span>
+                            <span class="custom-tray-sub">
+                                @Picked.Count of @Course.Outline.Count subchapters &middot;
+                                @(_mode == ExamMode.Practice
+                                    ? "no time limit"
+                                    : $"{ExamCatalog.MinutesFor(Course, Size)} {T.Minutes}")
+                            </span>
+                        }
+                    </div>
+
+                    <FluentButton Appearance="Appearance.Accent" Class="custom-start"
+                                  Disabled="@(Available == 0)" OnClick="Start">
+                        <span style="margin-right:6px">Start test</span>
+                        <AppIcon Name="chevron-right" Size="16" />
+                    </FluentButton>
+                </div>
+            }
+        </div>
+    </main>
+</div>
+
+@code {
+    private static readonly int[] Presets = [10, 20, 30, 50];
+
+    private enum Tick { None, Some, All }
+
+    /// <summary>Keys of the picked outline objectives.</summary>
+    private readonly HashSet<string> _picked = [];
+
+    /// <summary>Bank questions per objective, counted once rather than on every render.</summary>
+    private Dictionary<string, int> _counts = [];
+
+    /// <summary>Requested length. Larger than what is available means "all of them".</summary>
+    private int _count = 20;
+
+    private ExamMode _mode = ExamMode.Practice;
+
+    private Course Course => Courses.Current;
+
+    private Ui T => Ui.For(Course.Language);
+
+    /// <summary>Picked objectives with questions behind them, in outline order.</summary>
+    private List<SkillsSection> Picked =>
+        [.. Course.Outline.Where(s => _picked.Contains(s.Key) && _counts[s.Key] > 0)];
+
+    private int Available => Picked.Sum(s => _counts[s.Key]);
+
+    private int Size => Math.Min(_count, Available);
+
+    private bool AllQuestions => Available > 0 && Size == Available;
+
+    private bool AllPicked => Course.Outline.Where(Pickable).All(s => _picked.Contains(s.Key));
+
+    protected override void OnInitialized()
+    {
+        _counts = Course.Outline.ToDictionary(s => s.Key, s => Course.QuestionsIn(s).Count);
+
+        // Back from a custom test: start from the selection it was built with.
+        if (Session.Form.IsCustom && Session.Course == Course)
+        {
+            _picked.UnionWith(Session.Form.Sections.Select(s => s.Key));
+            _count = Session.Form.Size;
+            _mode = Session.Mode;
+        }
+    }
+
+    private bool Pickable(SkillsSection section) => _counts[section.Key] > 0;
+
+    private Tick StateOf(IReadOnlyList<SkillsSection> sections)
+    {
+        var pickable = sections.Where(Pickable).ToList();
+        var picked = pickable.Count(s => _picked.Contains(s.Key));
+        return picked == 0 ? Tick.None : picked == pickable.Count ? Tick.All : Tick.Some;
+    }
+
+    private static string Aria(Tick state) => state switch
+    {
+        Tick.All => "true",
+        Tick.Some => "mixed",
+        _ => "false"
+    };
+
+    private RenderFragment Box(Tick state) =>
+        @<span class="tick @state.ToString().ToLowerInvariant()" aria-hidden="true">
+            @if (state == Tick.All)
+            {
+                <AppIcon Name="check" Size="12" />
+            }
+            else if (state == Tick.Some)
+            {
+                <AppIcon Name="minus" Size="12" />
+            }
+        </span>;
+
+    private void Toggle(SkillsSection section)
+    {
+        if (!_picked.Remove(section.Key))
+        {
+            _picked.Add(section.Key);
+        }
+    }
+
+    /// <summary>A whole chapter: fills it unless it is already full, in which case it empties.</summary>
+    private void Toggle(IReadOnlyList<SkillsSection> sections)
+    {
+        var keys = sections.Where(Pickable).Select(s => s.Key).ToList();
+
+        if (StateOf(sections) == Tick.All)
+        {
+            _picked.ExceptWith(keys);
+        }
+        else
+        {
+            _picked.UnionWith(keys);
+        }
+    }
+
+    private void PickAll() =>
+        _picked.UnionWith(Course.Outline.Where(Pickable).Select(s => s.Key));
+
+    private void Slide(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n))
+        {
+            _count = n;
+        }
+    }
+
+    private void Start()
+    {
+        if (Available == 0)
+        {
+            return;
+        }
+
+        if (!Courses.Chosen)
+        {
+            Courses.Select(Course);
+        }
+
+        Session.SelectForm(Course, ExamCatalog.Custom(Course, Picked, Size), _mode);
+        Nav.NavigateTo("");
+    }
+}
